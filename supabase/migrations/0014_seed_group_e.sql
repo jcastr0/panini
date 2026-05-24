@@ -6,9 +6,7 @@ declare
   v_album_id uuid;
 begin
   select id into v_album_id from public.albums where code = 'FWC2026';
-
-  delete from public.stickers where album_id = v_album_id and group_code = 'E';
-
+  -- DELETE removido: seeds usan UPSERT (ver 0028_data_safety.sql)
   insert into public.stickers (album_id, code, number, name, team, group_code, type, rarity, page) values
     -- Alemania (40-41)
     (v_album_id, 'GER1',  1,  'Escudo de Alemania',       'Alemania', 'E', 'shiny',  2, 40),
@@ -96,7 +94,17 @@ begin
     (v_album_id, 'ECU17', 17, 'Nilson Angulo',            'Ecuador', 'E', 'normal', 1, 47),
     (v_album_id, 'ECU18', 18, 'Alan Minda',               'Ecuador', 'E', 'normal', 1, 47),
     (v_album_id, 'ECU19', 19, 'Kevin Rodriguez',          'Ecuador', 'E', 'normal', 1, 47),
-    (v_album_id, 'ECU20', 20, 'Enner Valencia',           'Ecuador', 'E', 'normal', 1, 47);
+    (v_album_id, 'ECU20', 20, 'Enner Valencia',           'Ecuador', 'E', 'normal', 1, 47)
+  on conflict (album_id, code) where code is not null
+  do update set
+    number      = excluded.number,
+    name        = excluded.name,
+    team        = excluded.team,
+    group_code  = excluded.group_code,
+    type        = excluded.type,
+    rarity      = excluded.rarity,
+    page        = excluded.page
+;
 
   update public.albums a
      set total_stickers = (select count(*) from public.stickers where album_id = a.id)

@@ -10,6 +10,17 @@ alter table public.stickers
 alter table public.stickers
   add column if not exists code text;
 
+-- Cleanup pre-backfill: borrar SOLO placeholders huérfanos de 0004
+-- (sin code y sin referencias en user_stickers). Anti-join garantiza que
+-- ningún registro con marcas de usuario sea afectado. Necesario para que
+-- el UPDATE siguiente no produzca duplicate key en stickers_album_code_uniq.
+delete from public.stickers s
+ where s.code is null
+   and s.album_id in (select id from public.albums where code = 'FWC2026')
+   and not exists (
+     select 1 from public.user_stickers us where us.sticker_id = s.id
+   );
+
 -- Intro: code = el número impreso ("00" para number=0, sino el número como string).
 -- El prefijo "FWC" lo arreglamos definitivamente en 0010 si quedó algo viejo.
 update public.stickers

@@ -13,9 +13,7 @@ begin
   end if;
 
   -- Limpia cromos de intro previos (los placeholders del 0004)
-  delete from public.stickers
-   where album_id = v_album_id and group_code is null;
-
+  -- DELETE removido: seeds usan UPSERT (ver 0028_data_safety.sql)
   -- Inserta los 9 cromos reales de la sección INTRO
   insert into public.stickers (album_id, number, name, team, group_code, type, rarity, page) values
     (v_album_id, 0,  'Logo Panini',                                       null, null, 'shiny',  3, 0),
@@ -26,7 +24,17 @@ begin
     (v_album_id, 5,  'Sede Estados Unidos',                               null, null, 'shiny',  2, 2),
     (v_album_id, 6,  'Sede México',                                       null, null, 'shiny',  2, 2),
     (v_album_id, 7,  'Balón Oficial Adidas',                              null, null, 'normal', 1, 3),
-    (v_album_id, 8,  'Póster Oficial del Torneo',                         null, null, 'normal', 1, 3);
+    (v_album_id, 8,  'Póster Oficial del Torneo',                         null, null, 'normal', 1, 3)
+  on conflict (album_id, code) where code is not null
+  do update set
+    number      = excluded.number,
+    name        = excluded.name,
+    team        = excluded.team,
+    group_code  = excluded.group_code,
+    type        = excluded.type,
+    rarity      = excluded.rarity,
+    page        = excluded.page
+;
 
   -- Recalcula total_stickers
   update public.albums a

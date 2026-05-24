@@ -9,10 +9,7 @@ begin
   select id into v_album_id from public.albums where code = 'FWC2026';
 
   -- Borrar versiones previas de estos 11 cromos por code (idempotente)
-  delete from public.stickers
-   where album_id = v_album_id
-     and code in ('9','10','11','12','13','14','15','16','17','18','19');
-
+  -- DELETE removido: seeds usan UPSERT (ver 0028_data_safety.sql)
   insert into public.stickers (album_id, code, number, name, team, group_code, type, rarity, page) values
     -- Páginas 106-107: campeones 1934-1974
     (v_album_id, '9',  9,  'Italy 1934',         null, null, 'shiny', 3, 106),
@@ -26,7 +23,17 @@ begin
     (v_album_id, '16', 16, 'Brazil 2002',        null, null, 'shiny', 3, 108),
     (v_album_id, '17', 17, 'Italy 2006',         null, null, 'shiny', 3, 109),
     (v_album_id, '18', 18, 'Germany 2014',       null, null, 'shiny', 3, 109),
-    (v_album_id, '19', 19, 'Argentina 2022',     null, null, 'shiny', 3, 109);
+    (v_album_id, '19', 19, 'Argentina 2022',     null, null, 'shiny', 3, 109)
+  on conflict (album_id, code) where code is not null
+  do update set
+    number      = excluded.number,
+    name        = excluded.name,
+    team        = excluded.team,
+    group_code  = excluded.group_code,
+    type        = excluded.type,
+    rarity      = excluded.rarity,
+    page        = excluded.page
+;
 
   update public.albums a
      set total_stickers = (select count(*) from public.stickers where album_id = a.id)

@@ -8,8 +8,7 @@ begin
   select id into v_album_id from public.albums where code = 'FWC2026';
 
   -- Borrar cualquier placeholder previo del Grupo A
-  delete from public.stickers where album_id = v_album_id and group_code = 'A';
-
+  -- DELETE removido: seeds usan UPSERT (ver 0028_data_safety.sql)
   -- México (páginas 8-9)
   insert into public.stickers (album_id, code, number, name, team, group_code, type, rarity, page) values
     (v_album_id, 'MEX1',  1,  'Escudo de México',         'México', 'A', 'shiny',  2, 8),
@@ -31,7 +30,17 @@ begin
     (v_album_id, 'MEX17', 17, 'Raúl Jiménez',             'México', 'A', 'normal', 1, 9),
     (v_album_id, 'MEX18', 18, 'Alexis Vega',              'México', 'A', 'normal', 1, 9),
     (v_album_id, 'MEX19', 19, 'Roberto Alvarado',         'México', 'A', 'normal', 1, 9),
-    (v_album_id, 'MEX20', 20, 'Cesar Huerta',             'México', 'A', 'normal', 1, 9);
+    (v_album_id, 'MEX20', 20, 'Cesar Huerta',             'México', 'A', 'normal', 1, 9)
+  on conflict (album_id, code) where code is not null
+  do update set
+    number      = excluded.number,
+    name        = excluded.name,
+    team        = excluded.team,
+    group_code  = excluded.group_code,
+    type        = excluded.type,
+    rarity      = excluded.rarity,
+    page        = excluded.page
+;
 
   -- Sudáfrica (páginas 10-11)
   insert into public.stickers (album_id, code, number, name, team, group_code, type, rarity, page) values
@@ -54,7 +63,17 @@ begin
     (v_album_id, 'RSA17', 17, 'Lyle Foster',              'Sudáfrica', 'A', 'normal', 1, 11),
     (v_album_id, 'RSA18', 18, 'Iqraam Rayners',           'Sudáfrica', 'A', 'normal', 1, 11),
     (v_album_id, 'RSA19', 19, 'Mohau Nkota',              'Sudáfrica', 'A', 'normal', 1, 11),
-    (v_album_id, 'RSA20', 20, 'Oswin Appollis',           'Sudáfrica', 'A', 'normal', 1, 11);
+    (v_album_id, 'RSA20', 20, 'Oswin Appollis',           'Sudáfrica', 'A', 'normal', 1, 11)
+  on conflict (album_id, code) where code is not null
+  do update set
+    number      = excluded.number,
+    name        = excluded.name,
+    team        = excluded.team,
+    group_code  = excluded.group_code,
+    type        = excluded.type,
+    rarity      = excluded.rarity,
+    page        = excluded.page
+;
 
   -- Corea del Sur (páginas 12-13)
   insert into public.stickers (album_id, code, number, name, team, group_code, type, rarity, page) values
@@ -77,7 +96,17 @@ begin
     (v_album_id, 'KOR17', 17, 'Gue-sung Cho',             'Corea del Sur', 'A', 'normal', 1, 13),
     (v_album_id, 'KOR18', 18, 'Heung-min Son',            'Corea del Sur', 'A', 'normal', 1, 13),
     (v_album_id, 'KOR19', 19, 'Hee-chan Hwang',           'Corea del Sur', 'A', 'normal', 1, 13),
-    (v_album_id, 'KOR20', 20, 'Hyeon-Gyu Oh',             'Corea del Sur', 'A', 'normal', 1, 13);
+    (v_album_id, 'KOR20', 20, 'Hyeon-Gyu Oh',             'Corea del Sur', 'A', 'normal', 1, 13)
+  on conflict (album_id, code) where code is not null
+  do update set
+    number      = excluded.number,
+    name        = excluded.name,
+    team        = excluded.team,
+    group_code  = excluded.group_code,
+    type        = excluded.type,
+    rarity      = excluded.rarity,
+    page        = excluded.page
+;
 
   -- Chequia (páginas 14-15) — antes "República Checa"
   insert into public.stickers (album_id, code, number, name, team, group_code, type, rarity, page) values
@@ -100,7 +129,17 @@ begin
     (v_album_id, 'CZE17', 17, 'Tomas Chory',               'Chequia', 'A', 'normal', 1, 15),
     (v_album_id, 'CZE18', 18, 'Vaclav Cerny',              'Chequia', 'A', 'normal', 1, 15),
     (v_album_id, 'CZE19', 19, 'Adam Hlozek',               'Chequia', 'A', 'normal', 1, 15),
-    (v_album_id, 'CZE20', 20, 'Patrik Schick',             'Chequia', 'A', 'normal', 1, 15);
+    (v_album_id, 'CZE20', 20, 'Patrik Schick',             'Chequia', 'A', 'normal', 1, 15)
+  on conflict (album_id, code) where code is not null
+  do update set
+    number      = excluded.number,
+    name        = excluded.name,
+    team        = excluded.team,
+    group_code  = excluded.group_code,
+    type        = excluded.type,
+    rarity      = excluded.rarity,
+    page        = excluded.page
+;
 
   -- Recalcular total
   update public.albums a
