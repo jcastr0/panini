@@ -1,0 +1,242 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-panini-red: var(--panini-red);
+  --color-pitch: var(--pitch);
+  --color-gold: var(--gold);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Paper-cream sticker album aesthetic */
+  --background: oklch(0.972 0.013 90);
+  --foreground: oklch(0.19 0.025 280);
+
+  --card: oklch(0.995 0.005 95);
+  --card-foreground: oklch(0.19 0.025 280);
+  --popover: oklch(0.995 0.005 95);
+  --popover-foreground: oklch(0.19 0.025 280);
+
+  /* Pitch green — football field, deep & saturated */
+  --primary: oklch(0.45 0.13 152);
+  --primary-foreground: oklch(0.985 0.01 95);
+
+  --secondary: oklch(0.93 0.018 85);
+  --secondary-foreground: oklch(0.22 0.025 280);
+
+  --muted: oklch(0.94 0.014 85);
+  --muted-foreground: oklch(0.45 0.022 270);
+
+  --accent: oklch(0.93 0.025 70);
+  --accent-foreground: oklch(0.22 0.025 280);
+
+  /* Panini packet red */
+  --destructive: oklch(0.58 0.22 27);
+  --panini-red: oklch(0.6 0.22 27);
+  --pitch: oklch(0.45 0.13 152);
+  --gold: oklch(0.81 0.14 85);
+
+  --border: oklch(0.86 0.018 85);
+  --input: oklch(0.86 0.018 85);
+  --ring: oklch(0.45 0.13 152 / 60%);
+
+  --chart-1: oklch(0.45 0.13 152);
+  --chart-2: oklch(0.6 0.22 27);
+  --chart-3: oklch(0.81 0.14 85);
+  --chart-4: oklch(0.5 0.18 240);
+  --chart-5: oklch(0.55 0.18 300);
+
+  --radius: 0.625rem;
+
+  --sidebar: oklch(0.97 0.013 88);
+  --sidebar-foreground: oklch(0.22 0.025 280);
+  --sidebar-primary: oklch(0.45 0.13 152);
+  --sidebar-primary-foreground: oklch(0.985 0.01 95);
+  --sidebar-accent: oklch(0.93 0.018 85);
+  --sidebar-accent-foreground: oklch(0.22 0.025 280);
+  --sidebar-border: oklch(0.86 0.018 85);
+  --sidebar-ring: oklch(0.45 0.13 152 / 60%);
+}
+
+.dark {
+  --background: oklch(0.18 0.02 280);
+  --foreground: oklch(0.96 0.013 85);
+  --card: oklch(0.22 0.025 280);
+  --card-foreground: oklch(0.96 0.013 85);
+  --popover: oklch(0.22 0.025 280);
+  --popover-foreground: oklch(0.96 0.013 85);
+  --primary: oklch(0.7 0.13 152);
+  --primary-foreground: oklch(0.18 0.02 280);
+  --secondary: oklch(0.26 0.025 280);
+  --secondary-foreground: oklch(0.96 0.013 85);
+  --muted: oklch(0.26 0.025 280);
+  --muted-foreground: oklch(0.72 0.018 85);
+  --accent: oklch(0.26 0.025 280);
+  --accent-foreground: oklch(0.96 0.013 85);
+  --destructive: oklch(0.7 0.21 27);
+  --panini-red: oklch(0.7 0.21 27);
+  --pitch: oklch(0.7 0.13 152);
+  --gold: oklch(0.85 0.14 85);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.7 0.13 152 / 60%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Display headings (h1..h3) use Bricolage Grotesque */
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display), ui-serif, Georgia, serif;
+    letter-spacing: -0.02em;
+  }
+  /* Tabular numbers for stats and percentages */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Sticker-slot card aesthetic */
+.sticker-slot {
+  position: relative;
+  background: linear-gradient(180deg, var(--card) 0%, color-mix(in oklab, var(--card), var(--muted) 30%) 100%);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--border) 60%, transparent);
+}
+.sticker-slot--empty {
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--muted) 60%, transparent),
+    color-mix(in oklab, var(--muted) 60%, transparent) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  border: 1px dashed color-mix(in oklab, var(--border), var(--muted-foreground) 20%);
+  box-shadow: none;
+}
+.sticker-slot--owned {
+  background: linear-gradient(155deg, var(--card) 0%, color-mix(in oklab, var(--card), var(--pitch) 6%) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--pitch) 30%, transparent),
+    0 1px 0 color-mix(in oklab, var(--pitch) 12%, transparent),
+    0 6px 14px -8px color-mix(in oklab, var(--pitch) 35%, transparent);
+}
+.sticker-slot--duplicate {
+  background: linear-gradient(155deg, var(--card) 0%, color-mix(in oklab, var(--card), var(--gold) 10%) 100%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--gold) 50%, transparent),
+    0 1px 0 color-mix(in oklab, var(--gold) 18%, transparent),
+    0 6px 14px -8px color-mix(in oklab, var(--gold) 40%, transparent);
+}
+.sticker-slot--shiny::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      125deg,
+      transparent 25%,
+      color-mix(in oklab, var(--gold) 35%, transparent) 45%,
+      color-mix(in oklab, white 50%, transparent) 50%,
+      color-mix(in oklab, var(--gold) 35%, transparent) 55%,
+      transparent 75%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  pointer-events: none;
+  animation: holo 6s linear infinite;
+  background-size: 200% 200%;
+}
+@keyframes holo {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Staggered reveal */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.rise > * {
+  opacity: 0;
+  animation: rise-in 0.4s ease-out forwards;
+}
+.rise > *:nth-child(1) { animation-delay: 0.02s; }
+.rise > *:nth-child(2) { animation-delay: 0.08s; }
+.rise > *:nth-child(3) { animation-delay: 0.14s; }
+.rise > *:nth-child(4) { animation-delay: 0.20s; }
+.rise > *:nth-child(5) { animation-delay: 0.26s; }
+.rise > *:nth-child(6) { animation-delay: 0.32s; }
+
+/* Editorial uppercase label */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Pitch line — sport divider */
+.pitch-line {
+  height: 6px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--pitch) 0 24px,
+    color-mix(in oklab, var(--pitch), var(--background) 60%) 24px 48px
+  );
+  border-radius: 2px;
+}
