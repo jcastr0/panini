@@ -132,15 +132,15 @@ export function StickerCard({
               "rounded grid place-items-center text-center px-1",
               horizontal ? "h-10" : "h-14",
               owned
-                ? "bg-[color-mix(in_oklab,var(--card),var(--accent-section,var(--pitch))_10%)]"
-                : "bg-[color-mix(in_oklab,var(--muted),transparent_40%)]",
+                ? "bg-[color-mix(in_oklab,var(--card),var(--accent-section,var(--pitch))_22%)] ring-1 ring-[color-mix(in_oklab,var(--accent-section,var(--pitch))_30%,transparent)]"
+                : "bg-[color-mix(in_oklab,var(--muted-foreground),transparent_85%)]",
             )}
           >
             <span
               className={cn(
                 "font-display font-semibold leading-tight",
                 horizontal ? "text-base" : "text-sm",
-                !owned && "text-muted-foreground/60",
+                !owned && "text-muted-foreground/50 italic",
               )}
             >
               {displayName}
@@ -148,7 +148,14 @@ export function StickerCard({
           </div>
 
           {team && team !== name && (
-            <div className="text-[11px] leading-tight text-muted-foreground truncate">
+            <div
+              className={cn(
+                "text-[11px] leading-tight truncate",
+                owned
+                  ? "text-foreground/80 font-medium"
+                  : "text-muted-foreground/60",
+              )}
+            >
               {name}
             </div>
           )}

@@ -162,30 +162,52 @@
   border-radius: 6px;
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--border) 60%, transparent);
 }
+/* Empty (falta): visualmente atenuado para que la owned destaque */
 .sticker-slot--empty {
   background: repeating-linear-gradient(
     45deg,
-    color-mix(in oklab, var(--muted) 60%, transparent),
-    color-mix(in oklab, var(--muted) 60%, transparent) 4px,
+    color-mix(in oklab, var(--muted-foreground) 14%, transparent),
+    color-mix(in oklab, var(--muted-foreground) 14%, transparent) 4px,
     transparent 4px,
     transparent 8px
   );
-  border: 1px dashed color-mix(in oklab, var(--border), var(--muted-foreground) 20%);
+  border: 1.5px dashed color-mix(in oklab, var(--muted-foreground) 32%, transparent);
   box-shadow: none;
+  opacity: 0.62;
+  filter: saturate(0.4);
 }
+.sticker-slot--empty:hover {
+  opacity: 0.85;
+  filter: saturate(0.7);
+  transition: opacity .15s ease, filter .15s ease;
+}
+
+/* Owned (pegada): protagonista visual — bg con color + ring grueso + lift */
 .sticker-slot--owned {
-  background: linear-gradient(155deg, var(--card) 0%, color-mix(in oklab, var(--card), var(--accent-section, var(--pitch)) 8%) 100%);
+  background: linear-gradient(
+    155deg,
+    var(--card) 0%,
+    color-mix(in oklab, var(--card), var(--accent-section, var(--pitch)) 20%) 100%
+  );
   box-shadow:
-    inset 0 0 0 1.5px color-mix(in oklab, var(--accent-section, var(--pitch)) 35%, transparent),
-    0 1px 0 color-mix(in oklab, var(--accent-section, var(--pitch)) 14%, transparent),
-    0 6px 14px -8px color-mix(in oklab, var(--accent-section, var(--pitch)) 40%, transparent);
+    inset 0 0 0 2px color-mix(in oklab, var(--accent-section, var(--pitch)) 55%, transparent),
+    0 2px 0 color-mix(in oklab, var(--accent-section, var(--pitch)) 22%, transparent),
+    0 10px 22px -10px color-mix(in oklab, var(--accent-section, var(--pitch)) 55%, transparent);
+  transform: translateY(-1px);
 }
+
+/* Duplicate (repetida): además del owned, halo dorado */
 .sticker-slot--duplicate {
-  background: linear-gradient(155deg, var(--card) 0%, color-mix(in oklab, var(--card), var(--gold) 10%) 100%);
+  background: linear-gradient(
+    155deg,
+    var(--card) 0%,
+    color-mix(in oklab, var(--card), var(--gold) 22%) 100%
+  );
   box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--gold) 50%, transparent),
-    0 1px 0 color-mix(in oklab, var(--gold) 18%, transparent),
-    0 6px 14px -8px color-mix(in oklab, var(--gold) 40%, transparent);
+    inset 0 0 0 2px color-mix(in oklab, var(--gold) 65%, transparent),
+    0 2px 0 color-mix(in oklab, var(--gold) 26%, transparent),
+    0 10px 22px -10px color-mix(in oklab, var(--gold) 55%, transparent);
+  transform: translateY(-1px);
 }
 .sticker-slot--shiny::before {
   content: "";
