@@ -171,50 +171,57 @@ function TeamHeaderCell({
 }) {
   return (
     <div
-      className="h-full rounded-lg bg-card border-2 p-3 sm:p-4 flex flex-col justify-between gap-2 shadow-sm overflow-hidden"
+      className="h-full rounded-lg bg-card border-2 p-3 sm:p-4 flex flex-col justify-between gap-2 shadow-sm overflow-hidden relative"
       style={{ borderColor: accent }}
     >
-      <div className="flex items-start gap-3">
+      {/* Fila superior: bandera + código país protagonista */}
+      <div className="flex items-center justify-between gap-2">
         <span
           className={`fi fi-${info.iso} shrink-0 rounded-sm shadow-md ring-1 ring-black/10`}
           style={{
-            width: "clamp(2.5rem, 8vw, 4rem)",
-            height: "clamp(1.875rem, 6vw, 3rem)",
+            width: "clamp(2.25rem, 7vw, 3.5rem)",
+            height: "clamp(1.6875rem, 5.25vw, 2.625rem)",
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
           aria-label={`Bandera de ${info.name}`}
         />
-        <div className="min-w-0 flex-1">
-          <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-muted-foreground leading-tight">
-            We are,
-          </div>
-          <div
-            className="font-display font-bold leading-[0.95] tracking-tight uppercase break-words"
-            style={{
-              color: accent,
-              fontSize: "clamp(1.1rem, 3.2vw, 1.75rem)",
-            }}
-          >
-            {info.englishName}
-          </div>
+        {/* Código FIFA de 3 letras — protagonista (así buscamos los cromos) */}
+        <span
+          className="font-mono font-black leading-none tabular tracking-tight"
+          style={{
+            color: accent,
+            fontSize: "clamp(2rem, 7vw, 3.25rem)",
+          }}
+          aria-label={`Código ${info.paniniCode}`}
+        >
+          {info.paniniCode}
+        </span>
+      </div>
+
+      {/* WE ARE, COUNTRY — más sutil ahora que el código manda */}
+      <div className="leading-tight">
+        <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          We are,
+        </div>
+        <div
+          className="font-display font-bold tracking-tight uppercase break-words leading-[0.95]"
+          style={{
+            color: accent,
+            fontSize: "clamp(0.95rem, 2.6vw, 1.4rem)",
+          }}
+        >
+          {info.englishName}
         </div>
       </div>
-      <div className="space-y-1.5">
+
+      <div className="space-y-1">
         <p className="text-[10px] sm:text-xs font-medium text-foreground/85 leading-snug">
           {info.federationName}
         </p>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span
-            className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-mono font-bold tracking-widest text-white"
-            style={{ backgroundColor: accent }}
-          >
-            {info.paniniCode}
-          </span>
-          <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-            {info.confederation}
-          </span>
-        </div>
+        <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+          {info.confederation}
+        </span>
       </div>
     </div>
   );
