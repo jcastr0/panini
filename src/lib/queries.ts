@@ -42,3 +42,90 @@ export async function getUserStats(userId: string) {
 
   return { total, owned, missing, duplicates, percent };
 }
+
+export async function getCollectorCard(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select(
+      "username, display_name, avatar_url, collector_card_base64, collector_card_updated_at",
+    )
+    .eq("id", userId)
+    .maybeSingle();
+  return data;
+}
+
+/** Cromos de un grupo, agrupados por equipo (orden de página/número) */
+export async function getStickersByGroup(albumId: string, groupCode: string) {
+  const supabase = await createClient();
+  const { data: stickers } = await supabase
+    .from("stickers")
+    .select("id, code, number, name, team, group_code, type, page")
+    .eq("album_id", albumId)
+    .eq("group_code", groupCode.toUpperCase())
+    .order("page", { ascending: true })
+    .order("number", { ascending: true });
+  return stickers ?? [];
+}
+
+/** Cromos de una sección especial (apertura/historia/coca-cola) */
+export async function getStickersBySection(
+  albumId: string,
+  sectionKey: "apertura" | "historia" | "coca-cola",
+) {
+  const supabase = await createClient();
+  const ranges = {
+    apertura: { gte: 0, lt: 100 },
+    historia: { gte: 100, lt: 110 },
+    "coca-cola": { gte: 110, lt: 120 },
+  };
+  const r = ranges[sectionKey];
+  const { data: stickers } = await supabase
+    .from("stickers")
+    .select("id, code, number, name, team, group_code, type, page")
+    .eq("album_id", albumId)
+    .is("group_code", null)
+    .gte("page", r.gte)
+    .lt("page", r.lt)
+    .order("page", { ascending: true })
+    .order("number", { ascending: true });
+  return stickers ?? [];
+}
+
+/** Stats por sección del álbum (1 viaje a DB) */
+export async function getAllSectionStats(userId: string, albumId: string) {
+  const supabase = await createClient();
+  const [{ data: stickers }, { data: owned }] = await Promise.all([
+    supabase
+      .from("stickers")
+      .select("id, group_code, page")
+      .eq("album_id", albumId),
+    supabase
+      .from("user_stickers")
+      .select("sticker_id, quantity")
+      .eq("user_id", userId)
+      .gt("quantity", 0),
+  ]);
+
+  const ownedSet = new Set((owned ?? []).map((r) => r.sticker_id));
+  const stats = new Map<string, { total: number; owned: number }>();
+
+  (stickers ?? []).forEach((s) => {
+    let key: string;
+    if (s.group_code) {
+      key = s.group_code.toUpperCase();
+    } else {
+      const p = s.page ?? 0;
+      if (p < 100) key = "apertura";
+      else if (p < 110) key = "historia";
+      else if (p < 120) key = "coca-cola";
+      else key = "other";
+    }
+    const entry = stats.get(key) ?? { total: 0, owned: 0 };
+    entry.total += 1;
+    if (ownedSet.has(s.id)) entry.owned += 1;
+    stats.set(key, entry);
+  });
+
+  return stats;
+}

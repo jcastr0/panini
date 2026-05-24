@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -18,11 +19,13 @@ export function UserMenu({
   username,
   displayName,
   avatarUrl,
+  collectorCardBase64,
 }: {
   email: string;
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
+  collectorCardBase64: string | null;
 }) {
   const router = useRouter();
   const initials = (displayName || username || email)
@@ -32,21 +35,27 @@ export function UserMenu({
     .map((s) => s[0]?.toUpperCase())
     .join("");
 
+  const imgSrc = collectorCardBase64
+    ? `data:image/jpeg;base64,${collectorCardBase64}`
+    : avatarUrl;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <Avatar className="size-8">
-          {avatarUrl ? <AvatarImage src={avatarUrl} alt="" /> : null}
+        <Avatar className="size-9">
+          {imgSrc ? <AvatarImage src={imgSrc} alt="" /> : null}
           <AvatarFallback className="text-xs">{initials || "?"}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="font-normal">
-          <div className="text-sm font-medium">
-            {displayName || (username ? `@${username}` : email)}
-          </div>
-          <div className="text-xs text-muted-foreground truncate">{email}</div>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="font-normal">
+            <div className="text-sm font-medium">
+              {displayName || (username ? `@${username}` : email)}
+            </div>
+            <div className="text-xs text-muted-foreground truncate">{email}</div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/profile")}>
           <User className="mr-2 size-4" /> Mi perfil

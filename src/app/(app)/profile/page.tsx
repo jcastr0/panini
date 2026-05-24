@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./_components/profile-form";
+import { CollectorCardUpload } from "./_components/collector-card-upload";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -11,7 +12,9 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, display_name, city, country, avatar_url, is_public_profile")
+    .select(
+      "username, display_name, city, country, avatar_url, is_public_profile, collector_card_base64",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -23,10 +26,14 @@ export default async function ProfilePage() {
           Tu perfil
         </h1>
         <p className="text-sm text-muted-foreground">
-          Otros coleccionistas te verán por este nombre y ciudad cuando busquen
-          matches.
+          Tu nombre y lámina aparecen en cada sección del álbum.
         </p>
       </header>
+
+      <CollectorCardUpload
+        current={profile?.collector_card_base64 ?? null}
+        username={profile?.username ?? ""}
+      />
 
       <ProfileForm
         email={user.email ?? ""}

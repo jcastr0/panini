@@ -30,7 +30,8 @@ export async function setStickerQuantity(stickerId: string, quantity: number) {
     if (error) return { error: error.message };
   }
 
-  revalidatePath("/album");
+  // El layout cubre todas las rutas hijas (/album, /album/grupo/*, /album/apertura, etc.)
+  revalidatePath("/album", "layout");
   revalidatePath("/collection");
   revalidatePath("/dashboard");
   return { success: true };

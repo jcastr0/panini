@@ -16,7 +16,7 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, display_name, avatar_url")
+    .select("username, display_name, avatar_url, collector_card_base64")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -41,6 +41,7 @@ export default async function AppLayout({
             username={profile?.username ?? ""}
             displayName={profile?.display_name ?? null}
             avatarUrl={profile?.avatar_url ?? null}
+            collectorCardBase64={profile?.collector_card_base64 ?? null}
           />
         </div>
       </header>

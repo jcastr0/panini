@@ -30,6 +30,7 @@ type AlbumRow = {
 type StickerRow = {
   id: string;
   album_id: string;
+  code: string | null;
   number: number;
   name: string;
   team: string | null;
@@ -48,6 +49,8 @@ type ProfileRow = {
   avatar_url: string | null;
   is_public_profile: boolean;
   created_at: string;
+  collector_card_base64: string | null;
+  collector_card_updated_at: string | null;
 };
 type UserStickerRow = {
   user_id: string;
