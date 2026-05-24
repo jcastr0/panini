@@ -51,8 +51,8 @@ export const GROUP_TEAMS: Record<GroupCode, Array<{ name: string; flag: string }
   ],
   B: [
     { name: "Canadá",               flag: "🇨🇦" },
-    { name: "Qatar",                flag: "🇶🇦" },
     { name: "Bosnia y Herzegovina", flag: "🇧🇦" },
+    { name: "Qatar",                flag: "🇶🇦" },
     { name: "Suiza",                flag: "🇨🇭" },
   ],
   C: [
