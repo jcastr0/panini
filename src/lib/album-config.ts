@@ -117,6 +117,74 @@ export const GROUP_TEAMS: Record<GroupCode, Array<{ name: string; flag: string }
   ],
 };
 
+/**
+ * Paleta por equipo: el color más representativo de cada selección
+ * (bandera / camiseta tradicional). Cuando estás en la página de un
+ * equipo concreto, esta paleta sustituye a la del grupo.
+ */
+export const TEAM_PALETTES: Record<string, { accent: string; tint: string }> = {
+  // Grupo A
+  "México":          { accent: "oklch(0.45 0.17 150)", tint: "oklch(0.96 0.06 150)" }, // verde
+  "Sudáfrica":       { accent: "oklch(0.60 0.16 100)", tint: "oklch(0.96 0.06 100)" }, // oro-verde
+  "Corea del Sur":   { accent: "oklch(0.55 0.22 25)",  tint: "oklch(0.96 0.05 25)"  }, // rojo Taegeuk
+  "República Checa": { accent: "oklch(0.45 0.18 255)", tint: "oklch(0.96 0.04 255)" }, // azul
+  // Grupo B
+  "Canadá":               { accent: "oklch(0.58 0.22 28)",  tint: "oklch(0.96 0.06 28)"  }, // rojo Maple
+  "Qatar":                { accent: "oklch(0.40 0.18 8)",   tint: "oklch(0.94 0.05 8)"   }, // granate
+  "Bosnia y Herzegovina": { accent: "oklch(0.48 0.18 250)", tint: "oklch(0.95 0.04 250)" }, // azul royal
+  "Suiza":                { accent: "oklch(0.48 0.20 25)",  tint: "oklch(0.95 0.05 25)"  }, // rojo profundo
+  // Grupo C
+  "Brasil":    { accent: "oklch(0.55 0.18 145)", tint: "oklch(0.96 0.06 145)" }, // verde-amarela
+  "Marruecos": { accent: "oklch(0.45 0.18 22)",  tint: "oklch(0.95 0.05 22)"  }, // rojo Marruecos
+  "Haití":     { accent: "oklch(0.55 0.20 235)", tint: "oklch(0.96 0.05 235)" }, // azul cielo
+  "Escocia":   { accent: "oklch(0.42 0.16 265)", tint: "oklch(0.95 0.04 265)" }, // azul navy
+  // Grupo D
+  "Estados Unidos": { accent: "oklch(0.40 0.16 265)", tint: "oklch(0.94 0.04 265)" }, // azul navy
+  "Paraguay":       { accent: "oklch(0.55 0.22 28)",  tint: "oklch(0.96 0.06 28)"  }, // rojo
+  "Australia":      { accent: "oklch(0.70 0.18 95)",  tint: "oklch(0.96 0.07 95)"  }, // oro Socceroos
+  "Turquía":        { accent: "oklch(0.52 0.22 18)",  tint: "oklch(0.96 0.06 18)"  }, // rojo turco
+  // Grupo E
+  "Alemania":        { accent: "oklch(0.52 0.22 30)",  tint: "oklch(0.96 0.06 30)"  }, // rojo
+  "Curazao":         { accent: "oklch(0.48 0.18 245)", tint: "oklch(0.95 0.04 245)" }, // azul
+  "Costa de Marfil": { accent: "oklch(0.62 0.18 50)",  tint: "oklch(0.96 0.06 50)"  }, // naranja
+  "Ecuador":         { accent: "oklch(0.70 0.18 90)",  tint: "oklch(0.96 0.07 90)"  }, // amarillo
+  // Grupo F
+  "Países Bajos": { accent: "oklch(0.65 0.20 50)", tint: "oklch(0.96 0.06 50)" }, // naranja Oranje
+  "Japón":        { accent: "oklch(0.55 0.22 22)", tint: "oklch(0.96 0.06 22)" }, // rojo sol
+  "Suecia":       { accent: "oklch(0.65 0.18 95)", tint: "oklch(0.96 0.07 95)" }, // amarillo
+  "Túnez":        { accent: "oklch(0.45 0.20 22)", tint: "oklch(0.95 0.05 22)" }, // rojo Túnez
+  // Grupo G
+  "Bélgica":       { accent: "oklch(0.70 0.16 95)",  tint: "oklch(0.96 0.07 95)"  }, // amarillo Diablos
+  "Egipto":        { accent: "oklch(0.50 0.20 28)",  tint: "oklch(0.95 0.05 28)"  }, // rojo
+  "Irán":          { accent: "oklch(0.42 0.16 145)", tint: "oklch(0.95 0.05 145)" }, // verde
+  "Nueva Zelanda": { accent: "oklch(0.28 0.02 270)", tint: "oklch(0.93 0.01 270)" }, // negro All Whites
+  // Grupo H
+  "España":         { accent: "oklch(0.52 0.22 26)",  tint: "oklch(0.96 0.05 26)"  }, // rojo Roja
+  "Cabo Verde":     { accent: "oklch(0.48 0.18 250)", tint: "oklch(0.95 0.04 250)" }, // azul
+  "Arabia Saudita": { accent: "oklch(0.45 0.16 150)", tint: "oklch(0.96 0.05 150)" }, // verde Halcones
+  "Uruguay":        { accent: "oklch(0.65 0.16 235)", tint: "oklch(0.96 0.04 235)" }, // celeste
+  // Grupo I
+  "Francia": { accent: "oklch(0.42 0.18 260)", tint: "oklch(0.95 0.04 260)" }, // azul Bleus
+  "Senegal": { accent: "oklch(0.48 0.16 150)", tint: "oklch(0.96 0.05 150)" }, // verde Leones
+  "Irak":    { accent: "oklch(0.40 0.18 22)",  tint: "oklch(0.95 0.05 22)"  }, // rojo
+  "Noruega": { accent: "oklch(0.55 0.22 28)",  tint: "oklch(0.96 0.05 28)"  }, // rojo
+  // Grupo J
+  "Argentina": { accent: "oklch(0.68 0.16 230)", tint: "oklch(0.96 0.04 230)" }, // celeste Albiceleste
+  "Argelia":   { accent: "oklch(0.45 0.18 150)", tint: "oklch(0.95 0.05 150)" }, // verde Fennecs
+  "Austria":   { accent: "oklch(0.52 0.22 25)",  tint: "oklch(0.96 0.05 25)"  }, // rojo
+  "Jordania":  { accent: "oklch(0.30 0.02 0)",   tint: "oklch(0.93 0.01 0)"   }, // negro
+  // Grupo K
+  "Portugal":                       { accent: "oklch(0.42 0.18 25)",  tint: "oklch(0.95 0.05 25)"  }, // rojo Portugal
+  "República Democrática del Congo": { accent: "oklch(0.62 0.16 90)",  tint: "oklch(0.96 0.06 90)"  }, // amarillo (Leopardos)
+  "Uzbekistán":                     { accent: "oklch(0.50 0.18 245)", tint: "oklch(0.96 0.04 245)" }, // azul
+  "Colombia":                       { accent: "oklch(0.75 0.17 92)",  tint: "oklch(0.96 0.08 92)"  }, // amarillo Tricolor
+  // Grupo L
+  "Inglaterra": { accent: "oklch(0.50 0.22 25)", tint: "oklch(0.95 0.05 25)" }, // rojo Three Lions
+  "Croacia":    { accent: "oklch(0.45 0.22 18)", tint: "oklch(0.95 0.05 18)" }, // rojo Vatreni
+  "Ghana":      { accent: "oklch(0.65 0.18 88)", tint: "oklch(0.96 0.06 88)" }, // amarillo Black Star
+  "Panamá":     { accent: "oklch(0.45 0.20 250)", tint: "oklch(0.95 0.04 250)" }, // azul
+};
+
 /** Devuelve la "section key" para una sticker según group_code/page */
 export function sectionKey(
   groupCode: string | null,

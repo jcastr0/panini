@@ -11,6 +11,7 @@ import {
   GROUP_CODES,
   GROUP_PALETTES,
   GROUP_TEAMS,
+  TEAM_PALETTES,
   sectionHref,
   sectionLabel,
   type GroupCode,
@@ -58,7 +59,7 @@ export default async function GroupPage({
     qtyMap.set(r.sticker_id, r.quantity ?? 0),
   );
 
-  const palette = GROUP_PALETTES[code];
+  const groupPalette = GROUP_PALETTES[code];
   const flags = GROUP_TEAMS[code];
 
   // Agrupar por equipo respetando el orden de GROUP_TEAMS
@@ -81,6 +82,9 @@ export default async function GroupPage({
   const teamIndex = requested - 1;
   const currentTeam = orderedTeams[teamIndex];
   if (!currentTeam) notFound();
+
+  // Paleta activa = la del equipo si existe; si no, fallback a la del grupo.
+  const palette = TEAM_PALETTES[currentTeam.name] ?? groupPalette;
 
   // Stats del grupo entero (mantiene contexto global en el hero)
   const total = stickers.length;
@@ -147,7 +151,7 @@ export default async function GroupPage({
       <SectionHero
         accent={palette.accent}
         tint={palette.tint}
-        badge={`Grupo · ${palette.tag}`}
+        badge={`Grupo ${code} · ${groupPalette.tag}`}
         letter={code}
         subtitle={flags.map((f) => f.name).join(" · ")}
         flags={flags}
@@ -156,37 +160,44 @@ export default async function GroupPage({
         ownerProps={ownerProps}
       />
 
-      {/* Selector de equipos */}
+      {/* Selector de equipos — cada tab usa el color del país, el activo se resalta */}
       <nav className="grid grid-cols-2 sm:grid-cols-4 gap-2" aria-label="Equipos">
         {orderedTeams.map((t, i) => {
           const ownedInTeam = t.list.filter(
             (s) => (qtyMap.get(s.id) ?? 0) >= 1,
           ).length;
           const active = i === teamIndex;
+          const teamPalette = TEAM_PALETTES[t.name] ?? groupPalette;
           return (
             <Link
               key={t.name}
               href={`${sectionHref(code)}?p=${i + 1}`}
-              className="rounded-xl border p-3 transition-all hover:-translate-y-0.5"
+              className="rounded-xl border p-3 transition-all hover:-translate-y-0.5 relative overflow-hidden"
               style={
                 active
                   ? {
-                      backgroundColor: palette.tint,
-                      borderColor: palette.accent,
-                      boxShadow: `0 4px 14px -8px ${palette.accent}88`,
+                      backgroundColor: teamPalette.tint,
+                      borderColor: teamPalette.accent,
+                      boxShadow: `0 4px 14px -8px ${teamPalette.accent}88`,
                     }
                   : undefined
               }
               aria-current={active ? "page" : undefined}
             >
-              <div className="flex items-center gap-2">
+              {/* Banda lateral del color del equipo */}
+              <span
+                className="absolute left-0 top-0 bottom-0 w-1"
+                style={{ backgroundColor: teamPalette.accent }}
+                aria-hidden
+              />
+              <div className="flex items-center gap-2 pl-1.5">
                 <span className="text-2xl leading-none" aria-hidden>
                   {t.flag}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div
                     className="text-sm font-semibold truncate"
-                    style={active ? { color: palette.accent } : undefined}
+                    style={active ? { color: teamPalette.accent } : undefined}
                   >
                     {t.name}
                   </div>
