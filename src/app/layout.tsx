@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import "flag-icons/css/flag-icons.min.css";
 import "./globals.css";
 
 const display = Bricolage_Grotesque({

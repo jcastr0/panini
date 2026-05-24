@@ -70,10 +70,11 @@ export default async function GroupPage({
     byTeam.get(key)!.push(s as SectionSticker);
   });
   const orderedTeams = flags
-    .map(({ name, flag }) => ({
-      name,
-      flag,
-      list: byTeam.get(name) ?? [],
+    .map((info) => ({
+      name: info.name,
+      flag: info.flag,
+      info,
+      list: byTeam.get(info.name) ?? [],
     }))
     .filter((t) => t.list.length > 0);
 
@@ -234,6 +235,7 @@ export default async function GroupPage({
       <TeamBlock
         teamName={currentTeam.name}
         teamFlag={currentTeam.flag}
+        teamInfo={currentTeam.info}
         list={currentTeam.list}
         qtyMap={qtyMap}
         groupCode={code}

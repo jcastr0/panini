@@ -1,4 +1,5 @@
 import { StickerCard } from "./sticker-card";
+import type { TeamInfo } from "@/lib/album-config";
 
 export type SectionSticker = {
   id: string;
@@ -13,6 +14,7 @@ export type SectionSticker = {
 export function TeamBlock({
   teamName,
   teamFlag,
+  teamInfo,
   list,
   qtyMap,
   groupCode,
@@ -22,6 +24,8 @@ export function TeamBlock({
 }: {
   teamName: string;
   teamFlag?: string;
+  /** Datos canónicos del equipo para el header (bandera SVG, federación...) */
+  teamInfo?: TeamInfo;
   list: SectionSticker[];
   qtyMap: Map<string, number>;
   /** Para el Group Context Card en la hoja 2 */
@@ -107,7 +111,8 @@ export function TeamBlock({
                 <Page1Grid
                   stickers={stickers}
                   qtyMap={qtyMap}
-                  firstRowOnRight={isFirstPage}
+                  teamInfo={isFirstPage ? teamInfo : undefined}
+                  accent={accent}
                 />
               )}
             </div>
@@ -121,23 +126,96 @@ export function TeamBlock({
 function Page1Grid({
   stickers,
   qtyMap,
-  firstRowOnRight,
+  teamInfo,
+  accent,
 }: {
   stickers: SectionSticker[];
   qtyMap: Map<string, number>;
-  firstRowOnRight: boolean;
+  /** Cuando se proporciona, ocupa el espacio vacío izquierdo de la hoja 1 */
+  teamInfo?: TeamInfo;
+  accent?: string;
 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-      {stickers.map((s, i) => {
-        const positionClass =
-          firstRowOnRight && i === 0 ? "sm:col-start-3" : undefined;
-        return (
-          <div key={s.id} className={positionClass}>
-            <StickerCardSlot s={s} qtyMap={qtyMap} />
+      {teamInfo && (
+        <div className="col-span-2 row-span-1">
+          <TeamHeaderCell info={teamInfo} accent={accent} />
+        </div>
+      )}
+      {stickers.map((s) => (
+        <div key={s.id}>
+          <StickerCardSlot s={s} qtyMap={qtyMap} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Cabecera de país que ocupa el espacio vacío de la hoja 1 (col-span-2):
+ *   ┌──────────────────────┐
+ *   │   [BANDERA SVG]      │
+ *   │   WE ARE,            │
+ *   │   MEXICO             │
+ *   │   ─────              │
+ *   │   Federación...      │
+ *   │   MEX · CONCACAF     │
+ *   └──────────────────────┘
+ */
+function TeamHeaderCell({
+  info,
+  accent,
+}: {
+  info: TeamInfo;
+  accent?: string;
+}) {
+  return (
+    <div
+      className="h-full rounded-lg bg-card border-2 p-3 sm:p-4 flex flex-col justify-between gap-2 shadow-sm overflow-hidden"
+      style={{ borderColor: accent }}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={`fi fi-${info.iso} shrink-0 rounded-sm shadow-md ring-1 ring-black/10`}
+          style={{
+            width: "clamp(2.5rem, 8vw, 4rem)",
+            height: "clamp(1.875rem, 6vw, 3rem)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+          aria-label={`Bandera de ${info.name}`}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-muted-foreground leading-tight">
+            We are,
           </div>
-        );
-      })}
+          <div
+            className="font-display font-bold leading-[0.95] tracking-tight uppercase break-words"
+            style={{
+              color: accent,
+              fontSize: "clamp(1.1rem, 3.2vw, 1.75rem)",
+            }}
+          >
+            {info.englishName}
+          </div>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <p className="text-[10px] sm:text-xs font-medium text-foreground/85 leading-snug">
+          {info.federationName}
+        </p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-mono font-bold tracking-widest text-white"
+            style={{ backgroundColor: accent }}
+          >
+            {info.paniniCode}
+          </span>
+          <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+            {info.confederation}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

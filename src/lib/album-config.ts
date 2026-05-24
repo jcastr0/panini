@@ -41,79 +41,109 @@ export const SPECIAL_SECTIONS: Record<
   "coca-cola": { accent: "var(--panini-red)", tint: "oklch(0.96 0.04 25)",  label: "Coca-Cola",   emoji: "⭐" },
 };
 
-/** Equipos por grupo con bandera emoji — coincide con el seed real */
-export const GROUP_TEAMS: Record<GroupCode, Array<{ name: string; flag: string }>> = {
+export type Confederation =
+  | "CONMEBOL"
+  | "UEFA"
+  | "CONCACAF"
+  | "CAF"
+  | "AFC"
+  | "OFC";
+
+export type TeamInfo = {
+  /** Nombre en español, mismo que en stickers.team */
+  name: string;
+  /** Bandera emoji para listas compactas y tabs */
+  flag: string;
+  /** ISO 3166-1 alpha-2 minúsculas — para clases `fi fi-{iso}` de flag-icons.
+      Subdivisiones GB-* (Escocia / Inglaterra) usan formato lipis: "gb-sct", "gb-eng". */
+  iso: string;
+  /** Código Panini de 3 letras (FIFA): MEX, RSA, KOR, BIH... — prefijo del sticker code */
+  paniniCode: string;
+  /** Nombre en inglés para el "WE ARE, {ENGLISH}" del header del país */
+  englishName: string;
+  /** Acrónimo de la federación nacional (para chip compacto) */
+  federation: string;
+  /** Nombre completo de la federación, como en la portada Panini */
+  federationName: string;
+  confederation: Confederation;
+};
+
+/** Equipos por grupo — coincide con stickers.team del seed real.
+ *  paniniCode = código FIFA de 3 letras impreso en el cromo (MEX1, RSA1...).
+ *  federationName = nombre oficial completo, como aparece en la portada del álbum.
+ */
+export const GROUP_TEAMS: Record<GroupCode, TeamInfo[]> = {
   A: [
-    { name: "México",        flag: "🇲🇽" },
-    { name: "Sudáfrica",     flag: "🇿🇦" },
-    { name: "Corea del Sur", flag: "🇰🇷" },
-    { name: "Chequia",       flag: "🇨🇿" },
+    { name: "México",        flag: "🇲🇽", iso: "mx", paniniCode: "MEX", englishName: "Mexico",       federation: "FMF",  federationName: "Federación Mexicana de Fútbol Asociación",  confederation: "CONCACAF" },
+    { name: "Sudáfrica",     flag: "🇿🇦", iso: "za", paniniCode: "RSA", englishName: "South Africa", federation: "SAFA", federationName: "South African Football Association",        confederation: "CAF"      },
+    { name: "Corea del Sur", flag: "🇰🇷", iso: "kr", paniniCode: "KOR", englishName: "South Korea",  federation: "KFA",  federationName: "Korea Football Association",                confederation: "AFC"      },
+    { name: "Chequia",       flag: "🇨🇿", iso: "cz", paniniCode: "CZE", englishName: "Czechia",      federation: "FAČR", federationName: "Football Association of the Czech Republic", confederation: "UEFA"   },
   ],
   B: [
-    { name: "Canadá",               flag: "🇨🇦" },
-    { name: "Bosnia y Herzegovina", flag: "🇧🇦" },
-    { name: "Qatar",                flag: "🇶🇦" },
-    { name: "Suiza",                flag: "🇨🇭" },
+    { name: "Canadá",               flag: "🇨🇦", iso: "ca", paniniCode: "CAN", englishName: "Canada",                 federation: "CSA",   federationName: "Canadian Soccer Association",                   confederation: "CONCACAF" },
+    { name: "Bosnia y Herzegovina", flag: "🇧🇦", iso: "ba", paniniCode: "BIH", englishName: "Bosnia and Herzegovina", federation: "NSBiH", federationName: "Football Association of Bosnia and Herzegovina", confederation: "UEFA"     },
+    { name: "Qatar",                flag: "🇶🇦", iso: "qa", paniniCode: "QAT", englishName: "Qatar",                  federation: "QFA",   federationName: "Qatar Football Association",                    confederation: "AFC"      },
+    { name: "Suiza",                flag: "🇨🇭", iso: "ch", paniniCode: "SUI", englishName: "Switzerland",            federation: "SFV",   federationName: "Swiss Football Association",                    confederation: "UEFA"     },
   ],
   C: [
-    { name: "Brasil",    flag: "🇧🇷" },
-    { name: "Marruecos", flag: "🇲🇦" },
-    { name: "Haití",     flag: "🇭🇹" },
-    { name: "Escocia",   flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
+    { name: "Brasil",    flag: "🇧🇷",          iso: "br",     paniniCode: "BRA", englishName: "Brazil",   federation: "CBF",  federationName: "Confederação Brasileira de Futebol",  confederation: "CONMEBOL" },
+    { name: "Marruecos", flag: "🇲🇦",          iso: "ma",     paniniCode: "MAR", englishName: "Morocco",  federation: "FRMF", federationName: "Fédération Royale Marocaine de Football", confederation: "CAF"  },
+    { name: "Haití",     flag: "🇭🇹",          iso: "ht",     paniniCode: "HAI", englishName: "Haiti",    federation: "FHF",  federationName: "Fédération Haïtienne de Football",    confederation: "CONCACAF" },
+    { name: "Escocia",   flag: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", iso: "gb-sct", paniniCode: "SCO", englishName: "Scotland", federation: "SFA",  federationName: "Scottish Football Association",       confederation: "UEFA"     },
   ],
   D: [
-    { name: "Estados Unidos", flag: "🇺🇸" },
-    { name: "Paraguay",       flag: "🇵🇾" },
-    { name: "Australia",      flag: "🇦🇺" },
-    { name: "Turquía",        flag: "🇹🇷" },
+    { name: "Estados Unidos", flag: "🇺🇸", iso: "us", paniniCode: "USA", englishName: "United States", federation: "USSF", federationName: "United States Soccer Federation", confederation: "CONCACAF" },
+    { name: "Paraguay",       flag: "🇵🇾", iso: "py", paniniCode: "PAR", englishName: "Paraguay",      federation: "APF",  federationName: "Asociación Paraguaya de Fútbol",  confederation: "CONMEBOL" },
+    { name: "Australia",      flag: "🇦🇺", iso: "au", paniniCode: "AUS", englishName: "Australia",     federation: "FA",   federationName: "Football Australia",              confederation: "AFC"      },
+    { name: "Turquía",        flag: "🇹🇷", iso: "tr", paniniCode: "TUR", englishName: "Türkiye",       federation: "TFF",  federationName: "Türkiye Futbol Federasyonu",      confederation: "UEFA"     },
   ],
   E: [
-    { name: "Alemania",        flag: "🇩🇪" },
-    { name: "Curazao",         flag: "🇨🇼" },
-    { name: "Costa de Marfil", flag: "🇨🇮" },
-    { name: "Ecuador",         flag: "🇪🇨" },
+    { name: "Alemania",        flag: "🇩🇪", iso: "de", paniniCode: "GER", englishName: "Germany",       federation: "DFB", federationName: "Deutscher Fußball-Bund",            confederation: "UEFA"     },
+    { name: "Curazao",         flag: "🇨🇼", iso: "cw", paniniCode: "CUW", englishName: "Curaçao",       federation: "FFK", federationName: "Federashon Futbol Kòrsou",          confederation: "CONCACAF" },
+    { name: "Costa de Marfil", flag: "🇨🇮", iso: "ci", paniniCode: "CIV", englishName: "Côte d'Ivoire", federation: "FIF", federationName: "Fédération Ivoirienne de Football", confederation: "CAF"      },
+    { name: "Ecuador",         flag: "🇪🇨", iso: "ec", paniniCode: "ECU", englishName: "Ecuador",       federation: "FEF", federationName: "Federación Ecuatoriana de Fútbol",  confederation: "CONMEBOL" },
   ],
   F: [
-    { name: "Países Bajos", flag: "🇳🇱" },
-    { name: "Japón",        flag: "🇯🇵" },
-    { name: "Suecia",       flag: "🇸🇪" },
-    { name: "Túnez",        flag: "🇹🇳" },
+    { name: "Países Bajos", flag: "🇳🇱", iso: "nl", paniniCode: "NED", englishName: "Netherlands", federation: "KNVB", federationName: "Koninklijke Nederlandse Voetbalbond", confederation: "UEFA" },
+    { name: "Japón",        flag: "🇯🇵", iso: "jp", paniniCode: "JPN", englishName: "Japan",       federation: "JFA",  federationName: "Japan Football Association",         confederation: "AFC"  },
+    { name: "Suecia",       flag: "🇸🇪", iso: "se", paniniCode: "SWE", englishName: "Sweden",      federation: "SvFF", federationName: "Svenska Fotbollförbundet",            confederation: "UEFA" },
+    { name: "Túnez",        flag: "🇹🇳", iso: "tn", paniniCode: "TUN", englishName: "Tunisia",     federation: "FTF",  federationName: "Fédération Tunisienne de Football",   confederation: "CAF"  },
   ],
   G: [
-    { name: "Bélgica",       flag: "🇧🇪" },
-    { name: "Egipto",        flag: "🇪🇬" },
-    { name: "Irán",          flag: "🇮🇷" },
-    { name: "Nueva Zelanda", flag: "🇳🇿" },
+    { name: "Bélgica",       flag: "🇧🇪", iso: "be", paniniCode: "BEL", englishName: "Belgium",     federation: "KBVB",  federationName: "Royal Belgian Football Association",          confederation: "UEFA" },
+    { name: "Egipto",        flag: "🇪🇬", iso: "eg", paniniCode: "EGY", englishName: "Egypt",       federation: "EFA",   federationName: "Egyptian Football Association",               confederation: "CAF"  },
+    { name: "Irán",          flag: "🇮🇷", iso: "ir", paniniCode: "IRN", englishName: "Iran",        federation: "FFIRI", federationName: "Football Federation Islamic Republic of Iran", confederation: "AFC" },
+    { name: "Nueva Zelanda", flag: "🇳🇿", iso: "nz", paniniCode: "NZL", englishName: "New Zealand", federation: "NZF",   federationName: "New Zealand Football",                        confederation: "OFC"  },
   ],
   H: [
-    { name: "España",         flag: "🇪🇸" },
-    { name: "Cabo Verde",     flag: "🇨🇻" },
-    { name: "Arabia Saudita", flag: "🇸🇦" },
-    { name: "Uruguay",        flag: "🇺🇾" },
+    { name: "España",         flag: "🇪🇸", iso: "es", paniniCode: "ESP", englishName: "Spain",        federation: "RFEF", federationName: "Real Federación Española de Fútbol",  confederation: "UEFA"     },
+    { name: "Cabo Verde",     flag: "🇨🇻", iso: "cv", paniniCode: "CPV", englishName: "Cape Verde",   federation: "FCF",  federationName: "Federação Caboverdiana de Futebol",   confederation: "CAF"      },
+    { name: "Arabia Saudita", flag: "🇸🇦", iso: "sa", paniniCode: "KSA", englishName: "Saudi Arabia", federation: "SAFF", federationName: "Saudi Arabian Football Federation",   confederation: "AFC"      },
+    { name: "Uruguay",        flag: "🇺🇾", iso: "uy", paniniCode: "URU", englishName: "Uruguay",      federation: "AUF",  federationName: "Asociación Uruguaya de Fútbol",       confederation: "CONMEBOL" },
   ],
   I: [
-    { name: "Francia", flag: "🇫🇷" },
-    { name: "Senegal", flag: "🇸🇳" },
-    { name: "Irak",    flag: "🇮🇶" },
-    { name: "Noruega", flag: "🇳🇴" },
+    { name: "Francia", flag: "🇫🇷", iso: "fr", paniniCode: "FRA", englishName: "France",  federation: "FFF", federationName: "Fédération Française de Football", confederation: "UEFA" },
+    { name: "Senegal", flag: "🇸🇳", iso: "sn", paniniCode: "SEN", englishName: "Senegal", federation: "FSF", federationName: "Fédération Sénégalaise de Football", confederation: "CAF" },
+    { name: "Irak",    flag: "🇮🇶", iso: "iq", paniniCode: "IRQ", englishName: "Iraq",    federation: "IFA", federationName: "Iraq Football Association",        confederation: "AFC"  },
+    { name: "Noruega", flag: "🇳🇴", iso: "no", paniniCode: "NOR", englishName: "Norway",  federation: "NFF", federationName: "Norges Fotballforbund",             confederation: "UEFA" },
   ],
   J: [
-    { name: "Argentina", flag: "🇦🇷" },
-    { name: "Argelia",   flag: "🇩🇿" },
-    { name: "Austria",   flag: "🇦🇹" },
-    { name: "Jordania",  flag: "🇯🇴" },
+    { name: "Argentina", flag: "🇦🇷", iso: "ar", paniniCode: "ARG", englishName: "Argentina", federation: "AFA", federationName: "Asociación del Fútbol Argentino", confederation: "CONMEBOL" },
+    { name: "Argelia",   flag: "🇩🇿", iso: "dz", paniniCode: "ALG", englishName: "Algeria",   federation: "FAF", federationName: "Fédération Algérienne de Football", confederation: "CAF"     },
+    { name: "Austria",   flag: "🇦🇹", iso: "at", paniniCode: "AUT", englishName: "Austria",   federation: "ÖFB", federationName: "Österreichischer Fußball-Bund",    confederation: "UEFA"     },
+    { name: "Jordania",  flag: "🇯🇴", iso: "jo", paniniCode: "JOR", englishName: "Jordan",    federation: "JFA", federationName: "Jordan Football Association",      confederation: "AFC"      },
   ],
   K: [
-    { name: "Portugal",                       flag: "🇵🇹" },
-    { name: "República Democrática del Congo", flag: "🇨🇩" },
-    { name: "Uzbekistán",                     flag: "🇺🇿" },
-    { name: "Colombia",                       flag: "🇨🇴" },
+    { name: "Portugal",                        flag: "🇵🇹", iso: "pt", paniniCode: "POR", englishName: "Portugal",     federation: "FPF",    federationName: "Federação Portuguesa de Futebol",            confederation: "UEFA"     },
+    { name: "República Democrática del Congo", flag: "🇨🇩", iso: "cd", paniniCode: "COD", englishName: "DR Congo",     federation: "FECOFA", federationName: "Fédération Congolaise de Football-Association", confederation: "CAF"   },
+    { name: "Uzbekistán",                      flag: "🇺🇿", iso: "uz", paniniCode: "UZB", englishName: "Uzbekistan",   federation: "UFA",    federationName: "Uzbekistan Football Association",            confederation: "AFC"      },
+    { name: "Colombia",                        flag: "🇨🇴", iso: "co", paniniCode: "COL", englishName: "Colombia",     federation: "FCF",    federationName: "Federación Colombiana de Fútbol",            confederation: "CONMEBOL" },
   ],
   L: [
-    { name: "Inglaterra", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-    { name: "Croacia",    flag: "🇭🇷" },
-    { name: "Ghana",      flag: "🇬🇭" },
-    { name: "Panamá",     flag: "🇵🇦" },
+    { name: "Inglaterra", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", iso: "gb-eng", paniniCode: "ENG", englishName: "England", federation: "FA",      federationName: "The Football Association",         confederation: "UEFA"     },
+    { name: "Croacia",    flag: "🇭🇷",          iso: "hr",     paniniCode: "CRO", englishName: "Croatia", federation: "HNS",     federationName: "Croatian Football Federation",     confederation: "UEFA"     },
+    { name: "Ghana",      flag: "🇬🇭",          iso: "gh",     paniniCode: "GHA", englishName: "Ghana",   federation: "GFA",     federationName: "Ghana Football Association",       confederation: "CAF"      },
+    { name: "Panamá",     flag: "🇵🇦",          iso: "pa",     paniniCode: "PAN", englishName: "Panama",  federation: "FEPAFUT", federationName: "Federación Panameña de Fútbol",    confederation: "CONCACAF" },
   ],
 };
 
