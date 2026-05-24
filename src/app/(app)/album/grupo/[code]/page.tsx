@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   getActiveAlbum,
@@ -13,10 +15,7 @@ import {
   sectionLabel,
   type GroupCode,
 } from "@/lib/album-config";
-import {
-  SectionFooterNav,
-  SectionHero,
-} from "../../_components/section-hero";
+import { SectionHero } from "../../_components/section-hero";
 import {
   TeamBlock,
   type SectionSticker,
@@ -26,10 +25,13 @@ const VALID_CODES = new Set(GROUP_CODES.map((c) => c.toLowerCase()));
 
 export default async function GroupPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ code: string }>;
+  searchParams: Promise<{ p?: string }>;
 }) {
   const { code: codeParam } = await params;
+  const { p } = await searchParams;
   if (!VALID_CODES.has(codeParam.toLowerCase())) notFound();
   const code = codeParam.toUpperCase() as GroupCode;
 
@@ -59,15 +61,28 @@ export default async function GroupPage({
   const palette = GROUP_PALETTES[code];
   const flags = GROUP_TEAMS[code];
 
-  // Agrupar por equipo
+  // Agrupar por equipo respetando el orden de GROUP_TEAMS
   const byTeam = new Map<string, SectionSticker[]>();
   stickers.forEach((s) => {
     const key = s.team ?? "";
     if (!byTeam.has(key)) byTeam.set(key, []);
     byTeam.get(key)!.push(s as SectionSticker);
   });
-  const teams = [...byTeam.entries()];
+  const orderedTeams = flags
+    .map(({ name, flag }) => ({
+      name,
+      flag,
+      list: byTeam.get(name) ?? [],
+    }))
+    .filter((t) => t.list.length > 0);
 
+  const totalTeams = orderedTeams.length;
+  const requested = Math.max(1, Math.min(totalTeams, Number(p) || 1));
+  const teamIndex = requested - 1;
+  const currentTeam = orderedTeams[teamIndex];
+  if (!currentTeam) notFound();
+
+  // Stats del grupo entero (mantiene contexto global en el hero)
   const total = stickers.length;
   const owned = stickers.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length;
 
@@ -78,20 +93,50 @@ export default async function GroupPage({
     avatarUrl: collectorCard?.avatar_url ?? null,
   };
 
-  // Prev / next entre las 15 secciones (apertura → A..L → historia → coca-cola)
+  // Footer nav contextual:
+  //  - dentro del grupo si hay equipo anterior/siguiente
+  //  - cruzar al grupo previo/siguiente cuando estás en extremos
   const idx = GROUP_CODES.indexOf(code);
   const prev =
-    idx > 0
-      ? { href: sectionHref(GROUP_CODES[idx - 1]), label: sectionLabel(GROUP_CODES[idx - 1]) }
-      : { href: sectionHref("apertura"), label: sectionLabel("apertura") };
+    requested > 1
+      ? {
+          href: `${sectionHref(code)}?p=${requested - 1}`,
+          label: orderedTeams[teamIndex - 1].name,
+          icon: orderedTeams[teamIndex - 1].flag,
+        }
+      : idx > 0
+        ? {
+            href: `${sectionHref(GROUP_CODES[idx - 1])}?p=${totalTeams}`,
+            label: sectionLabel(GROUP_CODES[idx - 1]),
+            icon: undefined as string | undefined,
+          }
+        : {
+            href: sectionHref("apertura"),
+            label: sectionLabel("apertura"),
+            icon: undefined,
+          };
   const next =
-    idx < GROUP_CODES.length - 1
-      ? { href: sectionHref(GROUP_CODES[idx + 1]), label: sectionLabel(GROUP_CODES[idx + 1]) }
-      : { href: sectionHref("historia"), label: sectionLabel("historia") };
+    requested < totalTeams
+      ? {
+          href: `${sectionHref(code)}?p=${requested + 1}`,
+          label: orderedTeams[teamIndex + 1].name,
+          icon: orderedTeams[teamIndex + 1].flag,
+        }
+      : idx < GROUP_CODES.length - 1
+        ? {
+            href: `${sectionHref(GROUP_CODES[idx + 1])}?p=1`,
+            label: sectionLabel(GROUP_CODES[idx + 1]),
+            icon: undefined as string | undefined,
+          }
+        : {
+            href: sectionHref("historia"),
+            label: sectionLabel("historia"),
+            icon: undefined,
+          };
 
   return (
     <div
-      className="space-y-10"
+      className="space-y-8"
       style={
         {
           "--accent-section": palette.accent,
@@ -104,29 +149,118 @@ export default async function GroupPage({
         tint={palette.tint}
         badge={`Grupo · ${palette.tag}`}
         letter={code}
-        subtitle={`${flags.map((f) => f.name).join(" · ")}`}
+        subtitle={flags.map((f) => f.name).join(" · ")}
         flags={flags}
         owned={owned}
         total={total}
         ownerProps={ownerProps}
       />
 
-      <div className="space-y-10">
-        {teams.map(([teamName, list]) => {
-          const flag = flags.find((t) => t.name === teamName)?.flag;
+      {/* Selector de equipos */}
+      <nav className="grid grid-cols-2 sm:grid-cols-4 gap-2" aria-label="Equipos">
+        {orderedTeams.map((t, i) => {
+          const ownedInTeam = t.list.filter(
+            (s) => (qtyMap.get(s.id) ?? 0) >= 1,
+          ).length;
+          const active = i === teamIndex;
           return (
-            <TeamBlock
-              key={teamName}
-              teamName={teamName}
-              teamFlag={flag}
-              list={list}
-              qtyMap={qtyMap}
-            />
+            <Link
+              key={t.name}
+              href={`${sectionHref(code)}?p=${i + 1}`}
+              className="rounded-xl border p-3 transition-all hover:-translate-y-0.5"
+              style={
+                active
+                  ? {
+                      backgroundColor: palette.tint,
+                      borderColor: palette.accent,
+                      boxShadow: `0 4px 14px -8px ${palette.accent}88`,
+                    }
+                  : undefined
+              }
+              aria-current={active ? "page" : undefined}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-2xl leading-none" aria-hidden>
+                  {t.flag}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div
+                    className="text-sm font-semibold truncate"
+                    style={active ? { color: palette.accent } : undefined}
+                  >
+                    {t.name}
+                  </div>
+                  <div className="text-xs font-mono tabular text-muted-foreground">
+                    {ownedInTeam}/{t.list.length}
+                  </div>
+                </div>
+              </div>
+            </Link>
           );
         })}
+      </nav>
+
+      {/* Indicador "1/4" */}
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-mono uppercase tracking-widest text-muted-foreground">
+          Página {requested}/{totalTeams}
+        </span>
+        <span className="font-display text-base font-semibold flex items-center gap-2">
+          <span className="text-2xl leading-none" aria-hidden>
+            {currentTeam.flag}
+          </span>
+          {currentTeam.name}
+        </span>
       </div>
 
-      <SectionFooterNav prev={prev} next={next} />
+      <TeamBlock
+        teamName={currentTeam.name}
+        teamFlag={currentTeam.flag}
+        list={currentTeam.list}
+        qtyMap={qtyMap}
+      />
+
+      {/* Footer nav: equipo anterior/siguiente o salto entre grupos */}
+      <nav className="border-t pt-6 grid grid-cols-2 gap-3">
+        <Link
+          href={prev.href}
+          className="flex items-center gap-3 rounded-xl border p-3 hover:bg-muted transition-colors"
+        >
+          <ChevronLeft className="size-5 shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+              Anterior
+            </div>
+            <div className="font-medium truncate flex items-center gap-1.5">
+              {prev.icon && (
+                <span className="text-lg leading-none" aria-hidden>
+                  {prev.icon}
+                </span>
+              )}
+              {prev.label}
+            </div>
+          </div>
+        </Link>
+        <Link
+          href={next.href}
+          className="flex items-center justify-end gap-3 rounded-xl border p-3 hover:bg-muted transition-colors text-right"
+        >
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+              Siguiente
+            </div>
+            <div className="font-medium truncate flex items-center justify-end gap-1.5">
+              {next.icon && (
+                <span className="text-lg leading-none" aria-hidden>
+                  {next.icon}
+                </span>
+              )}
+              {next.label}
+            </div>
+          </div>
+          <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+        </Link>
+      </nav>
     </div>
   );
 }
