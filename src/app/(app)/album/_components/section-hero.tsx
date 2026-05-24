@@ -53,50 +53,21 @@ export function SectionHero({
           </Link>
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_auto] gap-6 items-end">
-          <div className="space-y-4">
+        {/* Dos columnas: izquierda = grupo (dominante), derecha = lámina del dueño */}
+        <div className="grid grid-cols-[1fr_auto] gap-4 sm:gap-8 items-center">
+          <div className="min-w-0 space-y-3 sm:space-y-4">
             <span className="font-mono text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">
               {badge}
             </span>
 
-            {/* Letra + Lámina lado a lado: la lámina es la protagonista */}
-            <div className="flex items-end gap-4 sm:gap-6">
-              <div
-                className="font-display font-bold leading-[0.85] tracking-tighter"
-                style={{
-                  color: accent,
-                  fontSize: "clamp(4.5rem, 18vw, 10rem)",
-                }}
-              >
-                {letter}
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <div
-                  className="relative w-24 sm:w-28 lg:w-32 aspect-[3/4] rounded-lg overflow-hidden ring-2 shadow-lg"
-                  style={{ borderColor: accent, boxShadow: `0 8px 20px -8px ${accent}55` }}
-                >
-                  {cardSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={cardSrc}
-                      alt={`Lámina de @${ownerProps.username}`}
-                      className="size-full object-cover"
-                    />
-                  ) : (
-                    <div className="size-full bg-card grid place-items-center text-2xl font-bold text-muted-foreground">
-                      {initials || "?"}
-                    </div>
-                  )}
-                </div>
-                <p className="text-[11px] sm:text-xs text-muted-foreground text-center leading-tight max-w-[8rem]">
-                  Álbum de
-                  <br />
-                  <span className="font-semibold text-foreground">
-                    @{ownerProps.username || "tu"}
-                  </span>
-                </p>
-              </div>
+            <div
+              className="font-display font-bold leading-[0.85] tracking-tighter"
+              style={{
+                color: accent,
+                fontSize: "clamp(5rem, 22vw, 14rem)",
+              }}
+            >
+              {letter}
             </div>
 
             {subtitle && (
@@ -115,25 +86,53 @@ export function SectionHero({
             )}
           </div>
 
-          <div className="min-w-[200px] lg:min-w-[260px] space-y-2">
-            <div className="flex items-baseline justify-between gap-3">
-              <span
-                className="font-display text-4xl font-bold tabular"
-                style={{ color: accent }}
-              >
-                {percent}%
-              </span>
-              <span className="font-mono tabular text-sm text-muted-foreground">
-                {owned}/{total}
-              </span>
+          <div className="flex flex-col items-center gap-1.5 sm:gap-2 shrink-0">
+            <div
+              className="relative w-20 sm:w-24 lg:w-28 aspect-[3/4] rounded-lg overflow-hidden ring-2 shadow-lg"
+              style={{
+                borderColor: accent,
+                boxShadow: `0 8px 20px -8px ${accent}55`,
+              }}
+            >
+              {cardSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={cardSrc}
+                  alt={`Lámina de @${ownerProps.username}`}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <div className="size-full bg-card grid place-items-center text-xl font-bold text-muted-foreground">
+                  {initials || "?"}
+                </div>
+              )}
             </div>
-            <div className="h-2.5 w-full rounded-full bg-background/60 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${percent}%`, backgroundColor: accent }}
-              />
-            </div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground text-center leading-tight max-w-[6rem] sm:max-w-[7rem]">
+              Álbum de
+              <br />
+              <span className="font-semibold text-foreground">
+                @{ownerProps.username || "tu"}
+              </span>
+            </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3 sm:gap-4">
+          <span
+            className="font-display text-2xl sm:text-3xl font-bold tabular shrink-0"
+            style={{ color: accent }}
+          >
+            {percent}%
+          </span>
+          <div className="flex-1 h-2.5 rounded-full bg-background/60 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${percent}%`, backgroundColor: accent }}
+            />
+          </div>
+          <span className="font-mono tabular text-sm text-muted-foreground shrink-0">
+            {owned}/{total}
+          </span>
         </div>
       </div>
     </section>
