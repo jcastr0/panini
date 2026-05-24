@@ -44,10 +44,10 @@ export const SPECIAL_SECTIONS: Record<
 /** Equipos por grupo con bandera emoji — coincide con el seed real */
 export const GROUP_TEAMS: Record<GroupCode, Array<{ name: string; flag: string }>> = {
   A: [
-    { name: "México",          flag: "🇲🇽" },
-    { name: "Sudáfrica",       flag: "🇿🇦" },
-    { name: "Corea del Sur",   flag: "🇰🇷" },
-    { name: "República Checa", flag: "🇨🇿" },
+    { name: "México",        flag: "🇲🇽" },
+    { name: "Sudáfrica",     flag: "🇿🇦" },
+    { name: "Corea del Sur", flag: "🇰🇷" },
+    { name: "Chequia",       flag: "🇨🇿" },
   ],
   B: [
     { name: "Canadá",               flag: "🇨🇦" },
@@ -129,7 +129,7 @@ export const TEAM_PALETTES: Record<string, { accent: string; tint: string }> = {
   "México":          { accent: "oklch(0.45 0.17 150)", tint: "oklch(0.975 0.035 150)" }, // verde
   "Sudáfrica":       { accent: "oklch(0.60 0.16 100)", tint: "oklch(0.975 0.035 100)" }, // oro-verde
   "Corea del Sur":   { accent: "oklch(0.55 0.22 25)",  tint: "oklch(0.975 0.025 25)"  }, // rojo Taegeuk
-  "República Checa": { accent: "oklch(0.45 0.18 255)", tint: "oklch(0.975 0.020 255)" }, // azul
+  "Chequia":         { accent: "oklch(0.45 0.18 255)", tint: "oklch(0.975 0.020 255)" }, // azul
   // Grupo B
   "Canadá":               { accent: "oklch(0.58 0.22 28)",  tint: "oklch(0.975 0.025 28)"  }, // rojo Maple
   "Qatar":                { accent: "oklch(0.40 0.18 8)",   tint: "oklch(0.970 0.025 8)"   }, // granate
