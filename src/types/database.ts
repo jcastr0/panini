@@ -64,8 +64,24 @@ type TradeRow = {
   to_user: string;
   status: TradeStatus;
   message: string | null;
+  rejected_reason: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type NotificationRow = {
+  id: string;
+  user_id: string;
+  kind:
+    | "trade_received"
+    | "trade_accepted"
+    | "trade_rejected"
+    | "trade_completed"
+    | "trade_superseded"
+    | "trade_cancelled";
+  trade_id: string | null;
+  read_at: string | null;
+  created_at: string;
 };
 type TradeItemRow = {
   id: string;
@@ -110,6 +126,13 @@ export interface Database {
         Update: Partial<TradeRow>;
         Relationships: [];
       };
+      notifications: {
+        Row: NotificationRow;
+        Insert: Partial<NotificationRow> &
+          Pick<NotificationRow, "user_id" | "kind">;
+        Update: Partial<NotificationRow>;
+        Relationships: [];
+      };
       trade_items: {
         Row: TradeItemRow;
         Insert: Partial<TradeItemRow> &
@@ -147,6 +170,8 @@ export interface Database {
           score: number;
         }[];
       };
+      accept_trade: { Args: { p_trade_id: string }; Returns: void };
+      complete_trade: { Args: { p_trade_id: string }; Returns: void };
     };
     Enums: {
       sticker_type: StickerType;

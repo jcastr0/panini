@@ -17,6 +17,12 @@ const createTradeSchema = z.object({
   items: z.array(tradeItemSchema).min(1, "Agrega al menos un cromo"),
 });
 
+function revalidateTrade(tradeId: string) {
+  revalidatePath("/trades");
+  revalidatePath(`/trades/${tradeId}`);
+  revalidatePath("/", "layout"); // refresca badge del tab bar
+}
+
 export async function createTrade(input: z.infer<typeof createTradeSchema>) {
   const parsed = createTradeSchema.safeParse(input);
   if (!parsed.success) {
@@ -64,6 +70,7 @@ export async function createTrade(input: z.infer<typeof createTradeSchema>) {
 
   revalidatePath("/trades");
   revalidatePath("/trades/new");
+  revalidatePath("/", "layout");
   redirect(`/trades/${trade.id}`);
 }
 
@@ -84,24 +91,39 @@ export async function updateTradeStatus(
   } = await supabase.auth.getUser();
   if (!user) return { error: "No autenticado" };
 
+  const { trade_id, status } = parsed.data;
+
+  // Para 'accepted' y 'completed' usamos RPCs que aplican lógica de negocio
+  // (auto-rechazo de competidores; transferencia atómica de cantidades).
+  if (status === "accepted") {
+    const { error } = await supabase.rpc("accept_trade", { p_trade_id: trade_id });
+    if (error) return { error: error.message };
+    revalidateTrade(trade_id);
+    return { success: true };
+  }
+  if (status === "completed") {
+    const { error } = await supabase.rpc("complete_trade", { p_trade_id: trade_id });
+    if (error) return { error: error.message };
+    revalidateTrade(trade_id);
+    return { success: true };
+  }
+
+  // 'rejected' y 'cancelled': update directo con validación de permisos.
   const { data: trade } = await supabase
     .from("trades")
     .select("from_user, to_user, status")
-    .eq("id", parsed.data.trade_id)
+    .eq("id", trade_id)
     .single();
   if (!trade) return { error: "Intercambio no encontrado" };
 
-  const { trade_id, status } = parsed.data;
-  // Reglas:
-  // - cancelled: solo el que creó (from_user) y solo si pending
-  // - accepted/rejected: solo el receptor (to_user) y solo si pending
-  // - completed: cualquiera de los dos si está accepted
   if (status === "cancelled" && trade.from_user !== user.id)
     return { error: "Solo el creador puede cancelar" };
-  if ((status === "accepted" || status === "rejected") && trade.to_user !== user.id)
-    return { error: "Solo el receptor puede aceptar/rechazar" };
-  if (status === "completed" && ![trade.from_user, trade.to_user].includes(user.id))
-    return { error: "Solo participantes pueden completar" };
+  if (status === "rejected" && trade.to_user !== user.id)
+    return { error: "Solo el receptor puede rechazar" };
+
+  // Notificar al otro participante
+  const otherUser = trade.from_user === user.id ? trade.to_user : trade.from_user;
+  const notifKind = status === "rejected" ? "trade_rejected" : "trade_cancelled";
 
   const { error } = await supabase
     .from("trades")
@@ -109,7 +131,10 @@ export async function updateTradeStatus(
     .eq("id", trade_id);
   if (error) return { error: error.message };
 
-  revalidatePath("/trades");
-  revalidatePath(`/trades/${trade_id}`);
+  await supabase
+    .from("notifications")
+    .insert({ user_id: otherUser, kind: notifKind, trade_id });
+
+  revalidateTrade(trade_id);
   return { success: true };
 }
