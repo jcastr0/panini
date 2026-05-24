@@ -49,7 +49,14 @@ export function StickerCard({
     };
   }, []);
 
-  const label = code ?? `#${String(number).padStart(3, "0")}`;
+  // Códigos puramente numéricos (apertura/historia: "00", "1", ..., "19")
+  // se muestran con prefijo "FWC" para que sean buscables como las selecciones
+  // (MEX1, FWC1...). Códigos con letras (MEX1, CC3) se muestran tal cual.
+  const label = code
+    ? /^\d+$/.test(code)
+      ? `FWC${code}`
+      : code
+    : `#${String(number).padStart(3, "0")}`;
   const displayName = team ?? name;
 
   function commit(next: number) {
@@ -117,8 +124,13 @@ export function StickerCard({
         )}
       >
         <div className="relative z-10 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
-            <span className="font-semibold text-foreground/80">{label}</span>
+          <div className="flex items-center justify-between gap-1">
+            <span
+              className="font-mono font-black tabular tracking-tight text-sm sm:text-base leading-none text-[var(--accent-section,var(--pitch))]"
+              aria-label={`Código ${label}`}
+            >
+              {label}
+            </span>
             {shiny && (
               <Sparkles
                 className="size-3.5 text-[var(--gold)]"

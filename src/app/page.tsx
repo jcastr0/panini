@@ -11,6 +11,22 @@ export default async function Home() {
   } = await supabase.auth.getUser();
   if (user) redirect("/dashboard");
 
+  // Total real de cromos en el álbum activo (FWC2026 = 994). Lo leemos en lugar
+  // de hardcodearlo: si agregamos un sponsor o sección, no hay que editar copy.
+  const { data: album } = await supabase
+    .from("albums")
+    .select("id")
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
+  const { count: totalCount } = album
+    ? await supabase
+        .from("stickers")
+        .select("id", { count: "exact", head: true })
+        .eq("album_id", album.id)
+    : { count: 0 };
+  const total = totalCount ?? 0;
+
   return (
     <div className="flex-1 flex flex-col">
       <header className="border-b">
@@ -123,7 +139,7 @@ export default async function Home() {
           <div className="flex items-center gap-3">
             <Sparkles className="size-5 text-[var(--gold)]" />
             <p className="font-display text-2xl tracking-tight">
-              792 cromos te esperan.
+              {total} cromos te esperan.
             </p>
           </div>
           <Button asChild size="lg" className="bg-[var(--panini-blue)] hover:bg-[var(--panini-blue)]/90">
