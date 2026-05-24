@@ -174,18 +174,27 @@ function TeamHeaderCell({
       className="h-full rounded-lg bg-card border-2 p-3 sm:p-4 flex flex-col justify-between gap-2 shadow-sm overflow-hidden relative"
       style={{ borderColor: accent }}
     >
-      {/* Fila superior: bandera + código país protagonista */}
+      {/* Fila superior: bandera + balón + código país protagonista */}
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={`fi fi-${info.iso} shrink-0 rounded-sm shadow-md ring-1 ring-black/10`}
-          style={{
-            width: "clamp(2.25rem, 7vw, 3.5rem)",
-            height: "clamp(1.6875rem, 5.25vw, 2.625rem)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-          aria-label={`Bandera de ${info.name}`}
-        />
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className={`fi fi-${info.iso} rounded-sm shadow-md ring-1 ring-black/10`}
+            style={{
+              width: "clamp(2.25rem, 7vw, 3.5rem)",
+              height: "clamp(1.6875rem, 5.25vw, 2.625rem)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+            aria-label={`Bandera de ${info.name}`}
+          />
+          <span
+            className="leading-none select-none"
+            style={{ fontSize: "clamp(1.1rem, 3.2vw, 1.6rem)" }}
+            aria-hidden
+          >
+            ⚽
+          </span>
+        </div>
         {/* Código FIFA de 3 letras — protagonista (así buscamos los cromos) */}
         <span
           className="font-mono font-black leading-none tabular tracking-tight"
