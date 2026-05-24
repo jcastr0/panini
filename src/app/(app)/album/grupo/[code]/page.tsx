@@ -86,9 +86,15 @@ export default async function GroupPage({
   // Paleta activa = la del equipo si existe; si no, fallback a la del grupo.
   const palette = TEAM_PALETTES[currentTeam.name] ?? groupPalette;
 
-  // Stats del grupo entero (mantiene contexto global en el hero)
-  const total = stickers.length;
-  const owned = stickers.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length;
+  // Stats del EQUIPO activo (protagonista del hero) + contexto del grupo (línea menor)
+  const teamOwned = currentTeam.list.filter(
+    (s) => (qtyMap.get(s.id) ?? 0) >= 1,
+  ).length;
+  const teamTotal = currentTeam.list.length;
+  const groupTotal = stickers.length;
+  const groupOwned = stickers.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length;
+  const groupPercent =
+    groupTotal > 0 ? Math.round((groupOwned / groupTotal) * 100) : 0;
 
   const ownerProps = {
     username: collectorCard?.username ?? "",
@@ -151,12 +157,13 @@ export default async function GroupPage({
       <SectionHero
         accent={palette.accent}
         tint={palette.tint}
-        badge={`Grupo ${code} · ${groupPalette.tag}`}
+        badge={`${currentTeam.flag} ${currentTeam.name} · Grupo ${code}`}
         letter={code}
         subtitle={flags.map((f) => f.name).join(" · ")}
         flags={flags}
-        owned={owned}
-        total={total}
+        owned={teamOwned}
+        total={teamTotal}
+        context={`Grupo ${code} · ${groupOwned}/${groupTotal} · ${groupPercent}%`}
         ownerProps={ownerProps}
       />
 

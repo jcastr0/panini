@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Repeat, Plus, Users, User } from "lucide-react";
+import { BookOpen, Repeat, Plus, Layers, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = {
@@ -13,11 +13,11 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { href: "/album",      label: "Álbum",   icon: BookOpen, matchPrefix: "/album" },
-  { href: "/trades",     label: "Trades",  icon: Repeat,   matchPrefix: "/trades" },
-  { href: "/trades/new", label: "Crear",   icon: Plus      }, // FAB central
-  { href: "/amigos",     label: "Amigos",  icon: Users,    matchPrefix: "/amigos" },
-  { href: "/profile",    label: "Yo",      icon: User,     matchPrefix: "/profile" },
+  { href: "/album",       label: "Álbum",      icon: BookOpen, matchPrefix: "/album" },
+  { href: "/collection",  label: "Colección",  icon: Layers,   matchPrefix: "/collection" },
+  { href: "/trades/new",  label: "Crear",      icon: Plus      }, // FAB central
+  { href: "/trades",      label: "Trades",     icon: Repeat,   matchPrefix: "/trades" },
+  { href: "/profile",     label: "Yo",         icon: User,     matchPrefix: "/profile" },
 ];
 
 export function MobileTabBar({

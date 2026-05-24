@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Users, ArrowUpRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./_components/profile-form";
 import { CollectorCardUpload } from "./_components/collector-card-upload";
@@ -34,6 +36,25 @@ export default async function ProfilePage() {
         current={profile?.collector_card_base64 ?? null}
         username={profile?.username ?? ""}
       />
+
+      <Link
+        href="/amigos"
+        className="flex items-center gap-3 rounded-xl border p-4 hover:bg-muted/40 transition-colors"
+      >
+        <div
+          className="size-10 rounded-full grid place-items-center text-white shrink-0"
+          style={{ background: "var(--panini-blue)" }}
+        >
+          <Users className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-display font-semibold">Buscar coleccionistas</div>
+          <div className="text-xs text-muted-foreground">
+            Encuentra amigos por @username y comparte tu link público
+          </div>
+        </div>
+        <ArrowUpRight className="size-4 text-muted-foreground shrink-0" />
+      </Link>
 
       <ProfileForm
         email={user.email ?? ""}

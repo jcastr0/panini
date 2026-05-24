@@ -10,6 +10,7 @@ export function SectionHero({
   flags,
   owned,
   total,
+  context,
   ownerProps,
 }: {
   accent: string;
@@ -19,8 +20,11 @@ export function SectionHero({
   letter: React.ReactNode;
   subtitle?: string;
   flags?: Array<{ name: string; flag: string }>;
+  /** Cromos owned y total del scope ACTUAL (equipo si paginado, sección si no) */
   owned: number;
   total: number;
+  /** Línea de contexto opcional (ej. "Grupo A · 25/80 · 31%") */
+  context?: string;
   ownerProps: {
     username: string;
     displayName: string | null;
@@ -117,22 +121,29 @@ export function SectionHero({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-4">
-          <span
-            className="font-display text-2xl sm:text-3xl font-bold tabular shrink-0"
-            style={{ color: accent }}
-          >
-            {percent}%
-          </span>
-          <div className="flex-1 h-2.5 rounded-full bg-background/60 overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${percent}%`, backgroundColor: accent }}
-            />
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <span
+              className="font-display text-2xl sm:text-3xl font-bold tabular shrink-0"
+              style={{ color: accent }}
+            >
+              {percent}%
+            </span>
+            <div className="flex-1 h-2.5 rounded-full bg-background/60 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${percent}%`, backgroundColor: accent }}
+              />
+            </div>
+            <span className="font-mono tabular text-sm text-muted-foreground shrink-0">
+              {owned}/{total}
+            </span>
           </div>
-          <span className="font-mono tabular text-sm text-muted-foreground shrink-0">
-            {owned}/{total}
-          </span>
+          {context && (
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground text-right">
+              {context}
+            </p>
+          )}
         </div>
       </div>
     </section>
