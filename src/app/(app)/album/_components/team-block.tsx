@@ -54,10 +54,14 @@ export function TeamBlock({
         </span>
       </div>
       <div className="grid lg:grid-cols-2 gap-4">
-        {pages.map(([page, stickers]) => {
+        {pages.map(([page, stickers], pageIndex) => {
           const ownedInPage = stickers.filter(
             (s) => (qtyMap.get(s.id) ?? 0) >= 1,
           ).length;
+          // Layout 2/4/4 imitando el álbum real:
+          //   - Página izquierda (índice 0): primera fila a la DERECHA
+          //   - Página derecha  (índice 1): primera fila a la IZQUIERDA (default)
+          const firstRowOnRight = pageIndex === 0;
           return (
             <div
               key={page}
@@ -69,19 +73,31 @@ export function TeamBlock({
                   {stickers.length}
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
-                {stickers.map((s) => (
-                  <StickerCard
-                    key={s.id}
-                    id={s.id}
-                    code={s.code}
-                    number={s.number}
-                    name={s.name}
-                    team={s.team}
-                    type={s.type}
-                    initialQuantity={qtyMap.get(s.id) ?? 0}
-                  />
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                {stickers.map((s, i) => {
+                  // Posicionamiento sólo en desktop (sm+). En móvil flow normal de 2 cols.
+                  let positionClass: string | undefined;
+                  if (firstRowOnRight && i === 0) {
+                    // Empuja el primer sticker a la col 3 → row 1 = ". . 1 2"
+                    positionClass = "sm:col-start-3";
+                  } else if (!firstRowOnRight && i === 2) {
+                    // Después de los 2 primeros, forza salto: row 1 = "1 2 . ."
+                    positionClass = "sm:col-start-1";
+                  }
+                  return (
+                    <div key={s.id} className={positionClass}>
+                      <StickerCard
+                        id={s.id}
+                        code={s.code}
+                        number={s.number}
+                        name={s.name}
+                        team={s.team}
+                        type={s.type}
+                        initialQuantity={qtyMap.get(s.id) ?? 0}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
