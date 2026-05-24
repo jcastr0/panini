@@ -14,6 +14,8 @@ type Props = {
   team: string | null;
   type: "normal" | "shiny" | "legend" | "special";
   initialQuantity: number;
+  /** Variante ancha (col-span-2). Usado para Team Photo en hoja 2 */
+  horizontal?: boolean;
 };
 
 export function StickerCard({
@@ -24,6 +26,7 @@ export function StickerCard({
   team,
   type,
   initialQuantity,
+  horizontal = false,
 }: Props) {
   const [qty, setQty] = useState(initialQuantity);
   const [pending, startTransition] = useTransition();
@@ -87,7 +90,8 @@ export function StickerCard({
 
         <div
           className={cn(
-            "h-14 rounded grid place-items-center text-center px-1",
+            "rounded grid place-items-center text-center px-1",
+            horizontal ? "h-10" : "h-14",
             owned
               ? "bg-[color-mix(in_oklab,var(--card),var(--accent-section,var(--pitch))_10%)]"
               : "bg-[color-mix(in_oklab,var(--muted),transparent_40%)]",
@@ -95,7 +99,8 @@ export function StickerCard({
         >
           <span
             className={cn(
-              "font-display font-semibold leading-tight text-sm",
+              "font-display font-semibold leading-tight",
+              horizontal ? "text-base" : "text-sm",
               !owned && "text-muted-foreground/60",
             )}
           >

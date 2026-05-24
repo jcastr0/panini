@@ -15,11 +15,20 @@ export function TeamBlock({
   teamFlag,
   list,
   qtyMap,
+  groupCode,
+  groupFlags,
+  groupTint,
+  groupAccent,
 }: {
   teamName: string;
   teamFlag?: string;
   list: SectionSticker[];
   qtyMap: Map<string, number>;
+  /** Para el Group Context Card en la hoja 2 */
+  groupCode?: string;
+  groupFlags?: Array<{ name: string; flag: string }>;
+  groupTint?: string;
+  groupAccent?: string;
 }) {
   const pagesMap = new Map<number, SectionSticker[]>();
   list.forEach((s) => {
@@ -58,10 +67,9 @@ export function TeamBlock({
           const ownedInPage = stickers.filter(
             (s) => (qtyMap.get(s.id) ?? 0) >= 1,
           ).length;
-          // Layout 2/4/4 imitando el álbum real:
-          //   - Página izquierda (índice 0): primera fila a la DERECHA
-          //   - Página derecha  (índice 1): primera fila a la IZQUIERDA (default)
-          const firstRowOnRight = pageIndex === 0;
+          const isFirstPage = pageIndex === 0;
+          const isSecondPage = pageIndex === 1;
+
           return (
             <div
               key={page}
@@ -73,33 +81,176 @@ export function TeamBlock({
                   {stickers.length}
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                {stickers.map((s, i) => {
-                  // Posicionamiento sólo en desktop (sm+). En móvil flow normal de 2 cols.
-                  let positionClass: string | undefined;
-                  if (firstRowOnRight && i === 0) {
-                    // Empuja el primer sticker a la col 3 → row 1 = ". . 1 2"
-                    positionClass = "sm:col-start-3";
-                  } else if (!firstRowOnRight && i === 2) {
-                    // Después de los 2 primeros, forza salto: row 1 = "1 2 . ."
-                    positionClass = "sm:col-start-1";
-                  }
-                  return (
-                    <div key={s.id} className={positionClass}>
-                      <StickerCard
-                        id={s.id}
-                        code={s.code}
-                        number={s.number}
-                        name={s.name}
-                        team={s.team}
-                        type={s.type}
-                        initialQuantity={qtyMap.get(s.id) ?? 0}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+
+              {isSecondPage ? (
+                <Page2Grid
+                  stickers={stickers}
+                  qtyMap={qtyMap}
+                  groupCode={groupCode}
+                  groupFlags={groupFlags}
+                  activeTeam={teamName}
+                  tint={groupTint}
+                  accent={groupAccent}
+                />
+              ) : (
+                <Page1Grid
+                  stickers={stickers}
+                  qtyMap={qtyMap}
+                  firstRowOnRight={isFirstPage}
+                />
+              )}
             </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Page1Grid({
+  stickers,
+  qtyMap,
+  firstRowOnRight,
+}: {
+  stickers: SectionSticker[];
+  qtyMap: Map<string, number>;
+  firstRowOnRight: boolean;
+}) {
+  // Layout: ". . 1 2 / 3 4 5 6 / 7 8 9 10" (sticker #1 con sm:col-start-3)
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+      {stickers.map((s, i) => {
+        const positionClass =
+          firstRowOnRight && i === 0 ? "sm:col-start-3" : undefined;
+        return (
+          <div key={s.id} className={positionClass}>
+            <StickerCardSlot s={s} qtyMap={qtyMap} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Page2Grid({
+  stickers,
+  qtyMap,
+  groupCode,
+  groupFlags,
+  activeTeam,
+  tint,
+  accent,
+}: {
+  stickers: SectionSticker[];
+  qtyMap: Map<string, number>;
+  groupCode?: string;
+  groupFlags?: Array<{ name: string; flag: string }>;
+  activeTeam: string;
+  tint?: string;
+  accent?: string;
+}) {
+  // Layout: "11 12 13H / 14 15 16 17 / [Grupo] 18 19 20"
+  //  - sticker #13 (Team Photo) ocupa 2 columnas (horizontal)
+  //  - GroupContextCard se inserta antes del sticker en posición 7 (sticker #18)
+  const teamPhotoIdx = stickers.findIndex((s) => s.number === 13);
+  const items: React.ReactNode[] = [];
+  stickers.forEach((s, i) => {
+    if (i === 7 && groupCode && groupFlags) {
+      items.push(
+        <GroupContextCard
+          key="group-ctx"
+          groupCode={groupCode}
+          flags={groupFlags}
+          activeTeam={activeTeam}
+          tint={tint}
+          accent={accent}
+        />,
+      );
+    }
+    const isTeamPhoto = i === teamPhotoIdx;
+    items.push(
+      <div key={s.id} className={isTeamPhoto ? "sm:col-span-2" : undefined}>
+        <StickerCardSlot s={s} qtyMap={qtyMap} horizontal={isTeamPhoto} />
+      </div>,
+    );
+  });
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 auto-rows-fr">
+      {items}
+    </div>
+  );
+}
+
+function StickerCardSlot({
+  s,
+  qtyMap,
+  horizontal,
+}: {
+  s: SectionSticker;
+  qtyMap: Map<string, number>;
+  horizontal?: boolean;
+}) {
+  return (
+    <StickerCard
+      id={s.id}
+      code={s.code}
+      number={s.number}
+      name={s.name}
+      team={s.team}
+      type={s.type}
+      initialQuantity={qtyMap.get(s.id) ?? 0}
+      horizontal={horizontal}
+    />
+  );
+}
+
+function GroupContextCard({
+  groupCode,
+  flags,
+  activeTeam,
+  tint,
+  accent,
+}: {
+  groupCode: string;
+  flags: Array<{ name: string; flag: string }>;
+  activeTeam: string;
+  tint?: string;
+  accent?: string;
+}) {
+  return (
+    <div
+      className="hidden sm:flex rounded-md border-2 flex-col items-center justify-center gap-2 p-2 text-center"
+      style={{
+        backgroundColor: tint,
+        borderColor: accent,
+      }}
+    >
+      <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+        Grupo
+      </div>
+      <div
+        className="font-display text-2xl font-bold leading-none"
+        style={{ color: accent }}
+      >
+        {groupCode}
+      </div>
+      <div className="flex items-center gap-1 flex-wrap justify-center">
+        {flags.map((f) => {
+          const isActive = f.name === activeTeam;
+          return (
+            <span
+              key={f.name}
+              title={f.name}
+              aria-hidden
+              className="leading-none transition-all"
+              style={{
+                fontSize: isActive ? "1.5rem" : "0.85rem",
+                opacity: isActive ? 1 : 0.55,
+                filter: isActive ? "none" : "saturate(0.6)",
+              }}
+            >
+              {f.flag}
+            </span>
           );
         })}
       </div>

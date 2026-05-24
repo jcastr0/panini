@@ -229,6 +229,10 @@ export default async function GroupPage({
         teamFlag={currentTeam.flag}
         list={currentTeam.list}
         qtyMap={qtyMap}
+        groupCode={code}
+        groupFlags={flags}
+        groupTint={palette.tint}
+        groupAccent={palette.accent}
       />
 
       {/* Footer nav: equipo anterior/siguiente o salto entre grupos */}
