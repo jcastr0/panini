@@ -6,7 +6,7 @@ import type { SpecialKey } from "@/lib/album-config";
 export function SpecialSectionPage({
   sectionKey,
   badge,
-  title,
+  letter,
   subtitle,
   accent,
   tint,
@@ -20,7 +20,7 @@ export function SpecialSectionPage({
 }: {
   sectionKey: SpecialKey;
   badge: string;
-  title: React.ReactNode;
+  letter: React.ReactNode;
   subtitle?: string;
   accent: string;
   tint: string;
@@ -62,7 +62,7 @@ export function SpecialSectionPage({
         accent={accent}
         tint={tint}
         badge={badge}
-        title={title}
+        letter={letter}
         subtitle={subtitle}
         owned={owned}
         total={total}

@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
-import { AlbumOwnerTag } from "./album-owner-tag";
 
 export function SectionHero({
   accent,
   tint,
   badge,
-  title,
+  letter,
   subtitle,
   flags,
   owned,
@@ -16,7 +15,8 @@ export function SectionHero({
   accent: string;
   tint: string;
   badge: string;
-  title: React.ReactNode;
+  /** Lo que va GRANDE al lado de la lámina (la letra del grupo o un emoji) */
+  letter: React.ReactNode;
   subtitle?: string;
   flags?: Array<{ name: string; flag: string }>;
   owned: number;
@@ -29,6 +29,14 @@ export function SectionHero({
   };
 }) {
   const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+  const cardSrc = ownerProps.collectorCardBase64
+    ? `data:image/jpeg;base64,${ownerProps.collectorCardBase64}`
+    : ownerProps.avatarUrl;
+  const initials = (ownerProps.displayName || ownerProps.username || "?")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join("");
 
   return (
     <section
@@ -36,34 +44,68 @@ export function SectionHero({
       style={{ backgroundColor: tint }}
     >
       <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
           <Link
             href="/album"
             className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur border px-4 h-10 text-sm font-medium hover:bg-card transition-colors"
           >
             <ArrowLeft className="size-4" /> Mi álbum
           </Link>
-          <AlbumOwnerTag {...ownerProps} size="sm" />
         </div>
 
-        <div className="flex items-end justify-between gap-6 flex-wrap">
-          <div className="space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        <div className="grid lg:grid-cols-[1fr_auto] gap-6 items-end">
+          <div className="space-y-4">
+            <span className="font-mono text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">
               {badge}
             </span>
-            <div
-              className="font-display font-bold leading-[0.9] tracking-tighter"
-              style={{ color: accent }}
-            >
-              {title}
+
+            {/* Letra + Lámina lado a lado: la lámina es la protagonista */}
+            <div className="flex items-end gap-4 sm:gap-6">
+              <div
+                className="font-display font-bold leading-[0.85] tracking-tighter"
+                style={{
+                  color: accent,
+                  fontSize: "clamp(4.5rem, 18vw, 10rem)",
+                }}
+              >
+                {letter}
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <div
+                  className="relative w-24 sm:w-28 lg:w-32 aspect-[3/4] rounded-lg overflow-hidden ring-2 shadow-lg"
+                  style={{ borderColor: accent, boxShadow: `0 8px 20px -8px ${accent}55` }}
+                >
+                  {cardSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={cardSrc}
+                      alt={`Lámina de @${ownerProps.username}`}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="size-full bg-card grid place-items-center text-2xl font-bold text-muted-foreground">
+                      {initials || "?"}
+                    </div>
+                  )}
+                </div>
+                <p className="text-[11px] sm:text-xs text-muted-foreground text-center leading-tight max-w-[8rem]">
+                  Álbum de
+                  <br />
+                  <span className="font-semibold text-foreground">
+                    @{ownerProps.username || "tu"}
+                  </span>
+                </p>
+              </div>
             </div>
+
             {subtitle && (
-              <p className="text-muted-foreground text-sm sm:text-base mt-2">
+              <p className="text-muted-foreground text-sm sm:text-base">
                 {subtitle}
               </p>
             )}
             {flags && flags.length > 0 && (
-              <div className="flex gap-2 mt-3 text-2xl leading-none">
+              <div className="flex gap-2 text-2xl sm:text-3xl leading-none">
                 {flags.map((t) => (
                   <span key={t.name} title={t.name} aria-hidden>
                     {t.flag}
@@ -73,10 +115,10 @@ export function SectionHero({
             )}
           </div>
 
-          <div className="min-w-[200px] space-y-2">
+          <div className="min-w-[200px] lg:min-w-[260px] space-y-2">
             <div className="flex items-baseline justify-between gap-3">
               <span
-                className="font-display text-3xl font-bold tabular"
+                className="font-display text-4xl font-bold tabular"
                 style={{ color: accent }}
               >
                 {percent}%

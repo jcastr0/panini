@@ -41,7 +41,7 @@ export default async function CocaColaPage() {
     <SpecialSectionPage
       sectionKey="coca-cola"
       badge="Sección · Coca-Cola"
-      title={<span>Estrellas Coca-Cola</span>}
+      letter={<span aria-hidden>⭐</span>}
       subtitle="Cromos especiales del sponsor del torneo."
       accent={SPECIAL_SECTIONS["coca-cola"].accent}
       tint={SPECIAL_SECTIONS["coca-cola"].tint}

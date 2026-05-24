@@ -50,7 +50,7 @@ export default async function AperturaPage() {
     <SpecialSectionPage
       sectionKey="apertura"
       badge="Sección · Apertura"
-      title={<span>Tu álbum empieza aquí</span>}
+      letter={<span aria-hidden>🎉</span>}
       subtitle="Portada, trofeo, sedes y balón oficial."
       accent={SPECIAL_SECTIONS.apertura.accent}
       tint={SPECIAL_SECTIONS.apertura.tint}

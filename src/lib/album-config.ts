@@ -9,22 +9,25 @@ export const GROUP_CODES: GroupCode[] = [
   "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
 ];
 
+// Paleta de 12 grupos: hues distribuidos cada ~30° para máxima distinción.
+// Mantengo lightness ~0.55–0.65 y chroma alto para colores vivos pero legibles.
+// Tags = sobrenombre/identidad de la selección "principal" (host o tradicional) de cada grupo.
 export const GROUP_PALETTES: Record<
   GroupCode,
   { accent: string; tint: string; tag: string }
 > = {
-  A: { accent: "oklch(0.62 0.20 28)",  tint: "oklch(0.96 0.04 50)",  tag: "Anfitriones" },
-  B: { accent: "oklch(0.60 0.16 235)", tint: "oklch(0.96 0.025 230)", tag: "Norte" },
-  C: { accent: "oklch(0.55 0.18 155)", tint: "oklch(0.96 0.04 155)", tag: "Tropical" },
-  D: { accent: "oklch(0.52 0.20 280)", tint: "oklch(0.95 0.04 290)", tag: "Pacífico" },
-  E: { accent: "oklch(0.65 0.18 85)",  tint: "oklch(0.96 0.05 90)",  tag: "Centro" },
-  F: { accent: "oklch(0.65 0.18 20)",  tint: "oklch(0.95 0.04 20)",  tag: "Oriente" },
-  G: { accent: "oklch(0.60 0.15 200)", tint: "oklch(0.96 0.03 200)", tag: "Mediterráneo" },
-  H: { accent: "oklch(0.68 0.18 60)",  tint: "oklch(0.95 0.05 70)",  tag: "Ibérica" },
-  I: { accent: "oklch(0.55 0.22 340)", tint: "oklch(0.95 0.04 340)", tag: "Europa" },
-  J: { accent: "oklch(0.50 0.18 260)", tint: "oklch(0.95 0.04 260)", tag: "Atlántico" },
-  K: { accent: "oklch(0.55 0.18 130)", tint: "oklch(0.96 0.05 135)", tag: "Lusófono" },
-  L: { accent: "oklch(0.55 0.20 5)",   tint: "oklch(0.95 0.04 10)",  tag: "Británico" },
+  A: { accent: "oklch(0.62 0.20 28)",  tint: "oklch(0.96 0.05 45)",  tag: "El Tri"          }, // rojo-naranja  · México
+  B: { accent: "oklch(0.62 0.16 230)", tint: "oklch(0.96 0.03 225)", tag: "Maple"           }, // azul cielo    · Canadá
+  C: { accent: "oklch(0.55 0.18 150)", tint: "oklch(0.96 0.05 150)", tag: "Verdeamarela"    }, // verde         · Brasil
+  D: { accent: "oklch(0.55 0.20 300)", tint: "oklch(0.96 0.05 300)", tag: "Stars & Stripes" }, // magenta       · USA
+  E: { accent: "oklch(0.68 0.16 80)",  tint: "oklch(0.96 0.06 85)",  tag: "Die Mannschaft"  }, // amarillo cálido · Alemania
+  F: { accent: "oklch(0.62 0.22 350)", tint: "oklch(0.96 0.05 350)", tag: "Oranje"          }, // rosa-magenta  · Países Bajos
+  G: { accent: "oklch(0.60 0.13 195)", tint: "oklch(0.96 0.03 195)", tag: "Diablos Rojos"   }, // turquesa      · Bélgica
+  H: { accent: "oklch(0.68 0.18 55)",  tint: "oklch(0.96 0.06 65)",  tag: "La Roja"         }, // naranja       · España
+  I: { accent: "oklch(0.55 0.22 320)", tint: "oklch(0.96 0.05 320)", tag: "Les Bleus"       }, // fucsia        · Francia
+  J: { accent: "oklch(0.52 0.20 260)", tint: "oklch(0.96 0.05 265)", tag: "Albiceleste"     }, // índigo        · Argentina
+  K: { accent: "oklch(0.62 0.18 115)", tint: "oklch(0.96 0.06 115)", tag: "Cafeteros"       }, // verde-lima    · Colombia
+  L: { accent: "oklch(0.50 0.18 15)",  tint: "oklch(0.95 0.05 20)",  tag: "Three Lions"     }, // rojo profundo · Inglaterra
 };
 
 export type SpecialKey = "apertura" | "historia" | "coca-cola";

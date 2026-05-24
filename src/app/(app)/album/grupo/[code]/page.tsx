@@ -103,11 +103,8 @@ export default async function GroupPage({
         accent={palette.accent}
         tint={palette.tint}
         badge={`Grupo · ${palette.tag}`}
-        title={
-          <span className="text-[5rem] sm:text-[7rem] lg:text-[10rem] block">
-            {code}
-          </span>
-        }
+        letter={code}
+        subtitle={`${flags.map((f) => f.name).join(" · ")}`}
         flags={flags}
         owned={owned}
         total={total}

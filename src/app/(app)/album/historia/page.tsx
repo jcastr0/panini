@@ -43,7 +43,7 @@ export default async function HistoriaPage() {
     <SpecialSectionPage
       sectionKey="historia"
       badge="Sección · Historia"
-      title={<span>Los campeones</span>}
+      letter={<span aria-hidden>🏆</span>}
       subtitle="Once cromos foil con los campeones del mundo desde 1934."
       accent={SPECIAL_SECTIONS.historia.accent}
       tint={SPECIAL_SECTIONS.historia.tint}
