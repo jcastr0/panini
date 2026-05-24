@@ -22,7 +22,7 @@ export default async function AlbumPage() {
   const [{ data: stickers }, { data: owned }, stats] = await Promise.all([
     supabase
       .from("stickers")
-      .select("id, number, name, team, group_code, type")
+      .select("id, number, name, team, group_code, type, page")
       .eq("album_id", album.id)
       .order("number", { ascending: true }),
     supabase
@@ -37,12 +37,14 @@ export default async function AlbumPage() {
 
   type S = NonNullable<typeof stickers>[number];
 
-  // Group: intro (group_code null) + por group_code/team
-  const intro: S[] = [];
+  // Intro (group_code null) agrupado por página; equipos agrupados por grupo/equipo
+  const introByPage = new Map<number, S[]>();
   const groups = new Map<string, Map<string, S[]>>();
   (stickers ?? []).forEach((s) => {
     if (!s.group_code) {
-      intro.push(s);
+      const p = s.page ?? 0;
+      if (!introByPage.has(p)) introByPage.set(p, []);
+      introByPage.get(p)!.push(s);
       return;
     }
     if (!groups.has(s.group_code)) groups.set(s.group_code, new Map());
@@ -51,6 +53,20 @@ export default async function AlbumPage() {
     if (!g.has(teamKey)) g.set(teamKey, []);
     g.get(teamKey)!.push(s);
   });
+  const introPages = [...introByPage.entries()].sort(([a], [b]) => a - b);
+  const introTotal = introPages.reduce((a, [, l]) => a + l.length, 0);
+  const introOwned = introPages.reduce(
+    (a, [, l]) =>
+      a + l.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length,
+    0,
+  );
+
+  const PAGE_TITLES: Record<number, string> = {
+    0: "Portada",
+    1: "El Trofeo",
+    2: "Identidad del torneo",
+    3: "Balón y póster oficial",
+  };
 
   return (
     <div className="space-y-10">
@@ -102,21 +118,51 @@ export default async function AlbumPage() {
         </div>
       </header>
 
-      {intro.length > 0 && (
-        <section id="intro" className="space-y-4 scroll-mt-20">
-          <SectionHeader title="Apertura" subtitle="Portadas, balón, mascota y trofeo" />
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-            {intro.map((s) => (
-              <StickerCard
-                key={s.id}
-                id={s.id}
-                number={s.number}
-                name={s.name}
-                team={s.team}
-                type={s.type}
-                initialQuantity={qtyMap.get(s.id) ?? 0}
-              />
-            ))}
+      {introPages.length > 0 && (
+        <section id="intro" className="space-y-6 scroll-mt-20">
+          <SectionHeader
+            title="Apertura"
+            subtitle={`Páginas 0–${introPages[introPages.length - 1][0]} · ${introOwned}/${introTotal}`}
+          />
+          <div className="grid lg:grid-cols-2 gap-6">
+            {introPages.map(([page, list]) => {
+              const ownedInPage = list.filter(
+                (s) => (qtyMap.get(s.id) ?? 0) >= 1,
+              ).length;
+              return (
+                <div
+                  key={page}
+                  className="border rounded-xl bg-card p-4 space-y-3 relative"
+                >
+                  <div className="absolute -top-2 left-4 px-2 bg-background">
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Página {String(page).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <div className="flex items-end justify-between pt-1">
+                    <h3 className="font-display text-lg font-semibold tracking-tight">
+                      {PAGE_TITLES[page] ?? `Página ${page}`}
+                    </h3>
+                    <span className="font-mono text-xs text-muted-foreground tabular">
+                      {ownedInPage}/{list.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {list.map((s) => (
+                      <StickerCard
+                        key={s.id}
+                        id={s.id}
+                        number={s.number}
+                        name={s.name}
+                        team={s.team}
+                        type={s.type}
+                        initialQuantity={qtyMap.get(s.id) ?? 0}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

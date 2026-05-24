@@ -16,6 +16,10 @@
 !/test/.gitkeep
 !/test/README.md
 
+# docs locales (notas privadas, instrucciones manuales)
+/doc/
+!/doc/.gitkeep
+
 # next.js
 /.next/
 /out/

@@ -37,6 +37,7 @@ type StickerRow = {
   type: StickerType;
   rarity: number;
   image_url: string | null;
+  page: number | null;
 };
 type ProfileRow = {
   id: string;

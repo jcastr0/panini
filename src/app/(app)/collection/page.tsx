@@ -19,7 +19,7 @@ export default async function CollectionPage() {
   const [{ data: stickers }, { data: owned }, stats] = await Promise.all([
     supabase
       .from("stickers")
-      .select("id, number, name, team, group_code, type")
+      .select("id, number, name, team, group_code, type, page")
       .eq("album_id", album.id)
       .order("number", { ascending: true }),
     supabase
