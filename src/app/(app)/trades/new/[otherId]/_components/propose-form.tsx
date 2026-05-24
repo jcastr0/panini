@@ -192,7 +192,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   const bar =
-    accent === "pitch" ? "bg-[var(--pitch)]" : "bg-[var(--gold)]";
+    accent === "pitch" ? "bg-[var(--panini-blue)]" : "bg-[var(--gold)]";
   return (
     <div className="border rounded-xl bg-card overflow-hidden">
       <div className={`h-1 w-full ${bar}`} />
@@ -208,7 +208,7 @@ function Panel({
             className={cn(
               "font-display text-2xl font-bold tabular",
               accent === "pitch"
-                ? "text-[var(--pitch)]"
+                ? "text-[var(--panini-blue)]"
                 : "text-[var(--gold)]",
             )}
           >
@@ -309,7 +309,7 @@ function Stat({
       <span
         className={cn(
           "font-display font-semibold tabular",
-          accent === "pitch" ? "text-[var(--pitch)]" : "text-[var(--gold)]",
+          accent === "pitch" ? "text-[var(--panini-blue)]" : "text-[var(--gold)]",
         )}
       >
         {value}

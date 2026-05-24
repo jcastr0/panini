@@ -126,7 +126,7 @@ export default async function Home() {
               792 cromos te esperan.
             </p>
           </div>
-          <Button asChild size="lg" className="bg-[var(--pitch)] hover:bg-[var(--pitch)]/90">
+          <Button asChild size="lg" className="bg-[var(--panini-blue)] hover:bg-[var(--panini-blue)]/90">
             <Link href="/signup">
               Crear cuenta gratis <ArrowUpRight className="ml-1 size-4" />
             </Link>

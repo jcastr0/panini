@@ -245,7 +245,7 @@ function BigStat({
 }) {
   const color =
     accent === "pitch"
-      ? "text-[var(--pitch)]"
+      ? "text-[var(--panini-blue)]"
       : accent === "red"
         ? "text-[var(--panini-red)]"
         : accent === "gold"

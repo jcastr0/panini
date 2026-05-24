@@ -92,7 +92,7 @@ export default async function AlbumIndexPage() {
             Tus secciones
           </h2>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="size-2 rounded-full bg-[var(--pitch)]" /> tu progreso
+            <span className="size-2 rounded-full bg-[var(--panini-blue)]" /> tu progreso
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">

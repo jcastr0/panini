@@ -66,7 +66,7 @@ export default async function TradeDetailPage({
         </div>
         <h1 className="font-display text-4xl font-bold tracking-tight">
           {isFrom ? "Propuesta a " : "Propuesta de "}
-          <span className="text-[var(--pitch)]">
+          <span className="text-[var(--panini-blue)]">
             {other?.display_name || `@${other?.username ?? "usuario"}`}
           </span>
         </h1>
@@ -80,7 +80,7 @@ export default async function TradeDetailPage({
       </header>
 
       {trade.message && (
-        <blockquote className="border-l-4 border-[var(--pitch)] pl-4 py-1 text-muted-foreground italic">
+        <blockquote className="border-l-4 border-[var(--panini-blue)] pl-4 py-1 text-muted-foreground italic">
           “{trade.message}”
         </blockquote>
       )}
@@ -131,7 +131,7 @@ function Column({
       | null;
   }>;
 }) {
-  const bar = accent === "pitch" ? "bg-[var(--pitch)]" : "bg-[var(--gold)]";
+  const bar = accent === "pitch" ? "bg-[var(--panini-blue)]" : "bg-[var(--gold)]";
   return (
     <div className="border rounded-xl bg-card overflow-hidden flex flex-col">
       <div className={`h-1 w-full ${bar}`} />

@@ -53,7 +53,7 @@ export function TradeActions({
           <Button
             disabled={pending}
             onClick={() => run("accepted")}
-            className="bg-[var(--pitch)] hover:bg-[var(--pitch)]/90"
+            className="bg-[var(--panini-blue)] hover:bg-[var(--panini-blue)]/90"
           >
             <Check className="mr-1 size-4" /> Aceptar
           </Button>

@@ -79,7 +79,7 @@ export default async function NewTradeWithUser({
         <span className="eyebrow">Nueva propuesta</span>
         <h1 className="font-display text-4xl font-bold tracking-tight">
           Intercambio con{" "}
-          <span className="text-[var(--pitch)]">
+          <span className="text-[var(--panini-blue)]">
             {other.display_name || `@${other.username}`}
           </span>
         </h1>

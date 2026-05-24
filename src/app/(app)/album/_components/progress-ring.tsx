@@ -2,7 +2,7 @@ export function ProgressRing({
   percent,
   size = 160,
   strokeWidth = 14,
-  color = "var(--pitch)",
+  color = "var(--panini-blue)",
   label,
 }: {
   percent: number;

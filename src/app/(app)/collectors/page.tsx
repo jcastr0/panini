@@ -55,7 +55,7 @@ export default async function CollectorsPage() {
                     {initials || "?"}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-display font-semibold truncate group-hover:text-[var(--pitch)] transition-colors">
+                    <p className="font-display font-semibold truncate group-hover:text-[var(--panini-blue)] transition-colors">
                       {name}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">

@@ -76,14 +76,14 @@ export default async function NewTradePage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-display text-2xl font-bold tabular text-[var(--pitch)]">
+                  <p className="font-display text-2xl font-bold tabular text-[var(--panini-blue)]">
                     {m.score}
                   </p>
                   <p className="eyebrow">Score</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-md bg-[color-mix(in_oklab,var(--card),var(--pitch)_8%)] border border-[color-mix(in_oklab,var(--pitch)_30%,transparent)] p-3">
+                <div className="rounded-md bg-[color-mix(in_oklab,var(--card),var(--panini-blue)_8%)] border border-[color-mix(in_oklab,var(--panini-blue)_30%,transparent)] p-3">
                   <p className="eyebrow">Te ofrecen</p>
                   <p className="font-display text-xl tabular">
                     {m.they_offer_count}
