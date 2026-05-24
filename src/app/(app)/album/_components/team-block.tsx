@@ -17,8 +17,8 @@ export function TeamBlock({
   qtyMap,
   groupCode,
   groupFlags,
-  groupTint,
-  groupAccent,
+  tint,
+  accent,
 }: {
   teamName: string;
   teamFlag?: string;
@@ -27,8 +27,10 @@ export function TeamBlock({
   /** Para el Group Context Card en la hoja 2 */
   groupCode?: string;
   groupFlags?: Array<{ name: string; flag: string }>;
-  groupTint?: string;
-  groupAccent?: string;
+  /** Tint pastel del equipo activo — pinta el fondo de las dos hojas */
+  tint?: string;
+  /** Accent del equipo activo — borde sutil de las hojas */
+  accent?: string;
 }) {
   const pagesMap = new Map<number, SectionSticker[]>();
   list.forEach((s) => {
@@ -73,9 +75,19 @@ export function TeamBlock({
           return (
             <div
               key={page}
-              className="border rounded-xl bg-card p-4 relative space-y-3"
+              className="rounded-xl p-4 relative space-y-3 ring-1"
+              style={{
+                backgroundColor: tint,
+                // ring sutil del color del país (4px alpha → casi invisible)
+                ["--tw-ring-color" as string]: accent
+                  ? `${accent.replace(")", " / 0.18)")}`
+                  : undefined,
+              }}
             >
-              <div className="absolute -top-2 left-4 px-2 bg-background">
+              <div
+                className="absolute -top-2 left-4 px-2"
+                style={{ backgroundColor: tint }}
+              >
                 <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                   Página {String(page).padStart(2, "0")} · {ownedInPage}/
                   {stickers.length}
@@ -89,8 +101,7 @@ export function TeamBlock({
                   groupCode={groupCode}
                   groupFlags={groupFlags}
                   activeTeam={teamName}
-                  tint={groupTint}
-                  accent={groupAccent}
+                  accent={accent}
                 />
               ) : (
                 <Page1Grid
@@ -116,7 +127,6 @@ function Page1Grid({
   qtyMap: Map<string, number>;
   firstRowOnRight: boolean;
 }) {
-  // Layout: ". . 1 2 / 3 4 5 6 / 7 8 9 10" (sticker #1 con sm:col-start-3)
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
       {stickers.map((s, i) => {
@@ -138,7 +148,6 @@ function Page2Grid({
   groupCode,
   groupFlags,
   activeTeam,
-  tint,
   accent,
 }: {
   stickers: SectionSticker[];
@@ -146,12 +155,9 @@ function Page2Grid({
   groupCode?: string;
   groupFlags?: Array<{ name: string; flag: string }>;
   activeTeam: string;
-  tint?: string;
   accent?: string;
 }) {
   // Layout: "11 12 13H / 14 15 16 17 / [Grupo] 18 19 20"
-  //  - sticker #13 (Team Photo) ocupa 2 columnas (horizontal)
-  //  - GroupContextCard se inserta antes del sticker en posición 7 (sticker #18)
   const teamPhotoIdx = stickers.findIndex((s) => s.number === 13);
   const items: React.ReactNode[] = [];
   stickers.forEach((s, i) => {
@@ -162,7 +168,6 @@ function Page2Grid({
           groupCode={groupCode}
           flags={groupFlags}
           activeTeam={activeTeam}
-          tint={tint}
           accent={accent}
         />,
       );
@@ -208,33 +213,27 @@ function GroupContextCard({
   groupCode,
   flags,
   activeTeam,
-  tint,
   accent,
 }: {
   groupCode: string;
   flags: Array<{ name: string; flag: string }>;
   activeTeam: string;
-  tint?: string;
   accent?: string;
 }) {
+  // Sin recuadro: asienta sobre el fondo pastel de la hoja.
+  // 4 banderas en 2x2 → activa más grande, inactivas más chicas.
   return (
-    <div
-      className="hidden sm:flex rounded-md border-2 flex-col items-center justify-center gap-2 p-2 text-center"
-      style={{
-        backgroundColor: tint,
-        borderColor: accent,
-      }}
-    >
-      <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+    <div className="hidden sm:flex flex-col items-center justify-center gap-1 p-1 text-center">
+      <div className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
         Grupo
       </div>
       <div
-        className="font-display text-2xl font-bold leading-none"
+        className="font-display text-xl font-bold leading-none"
         style={{ color: accent }}
       >
         {groupCode}
       </div>
-      <div className="flex items-center gap-1 flex-wrap justify-center">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-0.5">
         {flags.map((f) => {
           const isActive = f.name === activeTeam;
           return (
@@ -244,9 +243,9 @@ function GroupContextCard({
               aria-hidden
               className="leading-none transition-all"
               style={{
-                fontSize: isActive ? "1.5rem" : "0.85rem",
-                opacity: isActive ? 1 : 0.55,
-                filter: isActive ? "none" : "saturate(0.6)",
+                fontSize: isActive ? "1.9rem" : "1.1rem",
+                opacity: isActive ? 1 : 0.5,
+                filter: isActive ? "none" : "saturate(0.5)",
               }}
             >
               {f.flag}

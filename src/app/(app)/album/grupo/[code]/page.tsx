@@ -231,8 +231,8 @@ export default async function GroupPage({
         qtyMap={qtyMap}
         groupCode={code}
         groupFlags={flags}
-        groupTint={palette.tint}
-        groupAccent={palette.accent}
+        tint={palette.tint}
+        accent={palette.accent}
       />
 
       {/* Footer nav: equipo anterior/siguiente o salto entre grupos */}
