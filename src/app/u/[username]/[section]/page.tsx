@@ -1,0 +1,183 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { getActiveAlbum, getStickersBySection } from "@/lib/queries";
+import { SPECIAL_SECTIONS, type SpecialKey } from "@/lib/album-config";
+import { StickerTileReadOnly } from "../_components/sticker-tile-readonly";
+
+const VALID_SECTIONS = new Set<SpecialKey>([
+  "apertura",
+  "historia",
+  "coca-cola",
+]);
+
+const PAGE_TITLES: Record<SpecialKey, Record<number, string>> = {
+  apertura: {
+    0: "Portada",
+    1: "El Trofeo",
+    2: "Identidad del torneo",
+    3: "Balón y póster oficial",
+  },
+  historia: {
+    106: "Campeones 1934-1962",
+    107: "Campeones 1962-1974",
+    108: "Campeones 1986-1994",
+    109: "Campeones 2002-2022",
+  },
+  "coca-cola": {
+    110: "Coca-Cola · primera mitad",
+    111: "Coca-Cola · segunda mitad",
+  },
+};
+
+export default async function PublicSpecialSectionPage({
+  params,
+}: {
+  params: Promise<{ username: string; section: string }>;
+}) {
+  const { username, section: sectionRaw } = await params;
+  const section = sectionRaw as SpecialKey;
+  if (!VALID_SECTIONS.has(section)) notFound();
+
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, username, display_name, is_public_profile")
+    .eq("username", username)
+    .maybeSingle();
+  if (!profile || !profile.is_public_profile) notFound();
+
+  const album = await getActiveAlbum();
+  if (!album) return <p>No hay álbum activo.</p>;
+
+  const [stickers, { data: ownedRows }] = await Promise.all([
+    getStickersBySection(album.id, section),
+    supabase
+      .from("user_stickers")
+      .select("sticker_id, quantity")
+      .eq("user_id", profile.id),
+  ]);
+
+  const qtyMap = new Map<string, number>();
+  (ownedRows ?? []).forEach((r) =>
+    qtyMap.set(r.sticker_id, r.quantity ?? 0),
+  );
+
+  const special = SPECIAL_SECTIONS[section];
+  const total = stickers.length;
+  const owned = stickers.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length;
+  const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+
+  // Agrupar por página
+  const byPage = new Map<number, typeof stickers>();
+  stickers.forEach((s) => {
+    const p = s.page ?? 0;
+    if (!byPage.has(p)) byPage.set(p, []);
+    byPage.get(p)!.push(s);
+  });
+  const pages = [...byPage.entries()].sort(([a], [b]) => a - b);
+  const pageTitles = PAGE_TITLES[section];
+
+  const ownerDisplay = profile.display_name ?? `@${profile.username}`;
+
+  return (
+    <div className="space-y-8">
+      <section
+        className="-mx-6 px-6 py-8 sm:py-10 rounded-b-3xl border-b"
+        style={{ backgroundColor: special.tint }}
+      >
+        <div className="max-w-6xl mx-auto space-y-5">
+          <Link
+            href={`/u/${username}`}
+            className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur border px-4 h-10 text-sm font-medium hover:bg-card transition-colors"
+          >
+            <ArrowLeft className="size-4" /> Perfil de {ownerDisplay}
+          </Link>
+
+          <div className="space-y-1">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Álbum de @{profile.username}
+            </span>
+            <div
+              className="font-display font-bold leading-none tracking-tighter"
+              style={{
+                color: special.accent,
+                fontSize: "clamp(2.5rem, 8vw, 4.5rem)",
+              }}
+            >
+              {special.emoji} {special.label}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span
+              className="font-display text-2xl sm:text-3xl font-bold tabular"
+              style={{ color: special.accent }}
+            >
+              {percent}%
+            </span>
+            <div className="flex-1 h-2.5 rounded-full bg-background/60 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${percent}%`,
+                  backgroundColor: special.accent,
+                }}
+              />
+            </div>
+            <span className="font-mono tabular text-sm text-muted-foreground">
+              {owned}/{total}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {pages.map(([page, list]) => {
+          const ownedInPage = list.filter(
+            (s) => (qtyMap.get(s.id) ?? 0) >= 1,
+          ).length;
+          return (
+            <div
+              key={page}
+              className="border rounded-xl bg-card p-4 space-y-3 relative"
+            >
+              <div className="absolute -top-2 left-4 px-2 bg-background">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Página {String(page).padStart(2, "0")}
+                </span>
+              </div>
+              <div className="flex items-end justify-between pt-1">
+                <h3 className="font-display text-lg font-semibold tracking-tight">
+                  {pageTitles[page] ?? `Página ${page}`}
+                </h3>
+                <span className="font-mono text-sm text-muted-foreground tabular">
+                  {ownedInPage}/{list.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {list.map((s) => (
+                  <StickerTileReadOnly
+                    key={s.id}
+                    code={s.code}
+                    number={s.number}
+                    name={s.name}
+                    team={s.team}
+                    type={s.type}
+                    quantity={qtyMap.get(s.id) ?? 0}
+                    accent={special.accent}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-xs text-muted-foreground italic text-center">
+        Vista de solo lectura · este es el álbum de @{profile.username}.
+      </p>
+    </div>
+  );
+}

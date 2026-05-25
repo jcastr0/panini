@@ -16,10 +16,14 @@ export function SectionTile({
   sectionKey,
   owned,
   total,
+  viewer,
 }: {
   sectionKey: SectionKey;
   owned: number;
   total: number;
+  /** Si está, navega al view-only del perfil público en `/u/${viewer}/...`
+   *  en vez del álbum propio del usuario logueado. */
+  viewer?: string;
 }) {
   const { accent, tint } = sectionPalette(sectionKey);
   const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
@@ -28,9 +32,17 @@ export function SectionTile({
   const flags = isGroup ? GROUP_TEAMS[sectionKey as GroupCode] : null;
   const special = !isGroup ? SPECIAL_SECTIONS[sectionKey as SpecialKey] : null;
 
+  // Si estoy mirando el perfil de otra persona, las tiles apuntan al
+  // view-only de esa persona, no al álbum propio del usuario logueado.
+  const href = viewer
+    ? isGroup
+      ? `/u/${viewer}/grupo/${(sectionKey as string).toLowerCase()}`
+      : `/u/${viewer}/${sectionKey}`
+    : sectionHref(sectionKey);
+
   return (
     <Link
-      href={sectionHref(sectionKey)}
+      href={href}
       className="group relative block rounded-2xl border bg-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring focus-visible:outline-none"
       style={
         {

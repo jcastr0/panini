@@ -127,6 +127,7 @@ export default async function PublicProfilePage({
                 sectionKey={key}
                 owned={s.owned}
                 total={s.total}
+                viewer={profile.username}
               />
             );
           })}
