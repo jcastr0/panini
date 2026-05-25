@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "flag-icons/css/flag-icons.min.css";
@@ -21,9 +21,25 @@ const mono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Panini JD · Álbum del Mundial 2026",
+  title: "Panini·JD · Álbum del Mundial 2026",
   description:
     "Plataforma para coleccionistas del álbum Panini FIFA World Cup 2026: registra tu colección, encuentra matches e intercambia con otros coleccionistas.",
+  applicationName: "Panini·JD",
+  appleWebApp: {
+    capable: true,
+    title: "Panini·JD",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1f3aa5",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
