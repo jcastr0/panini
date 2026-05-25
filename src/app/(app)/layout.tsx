@@ -30,7 +30,10 @@ export default async function AppLayout({
 
   return (
     <div className="flex-1 flex flex-col">
-      <header className="border-b sticky top-0 bg-background/85 backdrop-blur z-20">
+      <header
+        className="border-b sticky top-0 bg-background/85 backdrop-blur z-20"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link

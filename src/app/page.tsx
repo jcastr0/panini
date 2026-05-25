@@ -29,7 +29,10 @@ export default async function Home() {
 
   return (
     <div className="flex-1 flex flex-col">
-      <header className="border-b">
+      <header
+        className="border-b"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <span className="size-7 rounded-md bg-foreground text-background grid place-items-center font-display font-bold text-sm tracking-tighter">
