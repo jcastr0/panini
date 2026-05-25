@@ -1,14 +1,92 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { UserMenu } from "@/app/(app)/_components/user-menu";
+import { MobileTabBar } from "@/app/(app)/_components/mobile-tab-bar";
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Si hay sesión, mostramos la nav completa de la app (idéntica a (app)/layout)
+  // para que el usuario logueado pueda seguir navegando mientras mira otros perfiles.
+  if (user) {
+    const [{ data: profile }, { count: pendingTrades }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("username, display_name, avatar_url, collector_card_base64")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("trades")
+        .select("id", { count: "exact", head: true })
+        .eq("to_user", user.id)
+        .eq("status", "pending"),
+    ]);
+
+    return (
+      <div className="flex-1 flex flex-col">
+        <header
+          className="border-b sticky top-0 bg-background/85 backdrop-blur z-20"
+          style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+        >
+          <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <Link
+                href="/dashboard"
+                className="font-display font-bold tracking-tight text-lg"
+              >
+                Panini
+                <span className="text-[var(--gold)]">·</span>
+                <span className="text-[var(--panini-blue)]">JD</span>
+              </Link>
+              <nav className="hidden md:flex items-center gap-1 text-sm">
+                <NavLink href="/album">Álbum</NavLink>
+                <NavLink href="/collection">Mi colección</NavLink>
+                <NavLink href="/trades">
+                  Intercambios
+                  {pendingTrades ? (
+                    <span
+                      className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full px-1 text-[10px] font-bold text-white"
+                      style={{ background: "var(--panini-red)" }}
+                    >
+                      {pendingTrades > 9 ? "9+" : pendingTrades}
+                    </span>
+                  ) : null}
+                </NavLink>
+                <NavLink href="/amigos">Amigos</NavLink>
+              </nav>
+            </div>
+            <UserMenu
+              email={user.email ?? ""}
+              username={profile?.username ?? ""}
+              displayName={profile?.display_name ?? null}
+              avatarUrl={profile?.avatar_url ?? null}
+              collectorCardBase64={profile?.collector_card_base64 ?? null}
+            />
+          </div>
+        </header>
+        <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full pb-24 md:pb-8">
+          {children}
+        </main>
+        <MobileTabBar pendingTrades={pendingTrades ?? 0} />
+      </div>
+    );
+  }
+
+  // Sin sesión: header público con CTAs a login / signup
   return (
     <div className="flex-1 flex flex-col">
-      <header className="border-b">
+      <header
+        className="border-b"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link
             href="/"
@@ -41,5 +119,22 @@ export default function PublicLayout({
         Panini·JD · Proyecto independiente, no afiliado a Panini Group
       </footer>
     </div>
+  );
+}
+
+function NavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground inline-flex items-center"
+    >
+      {children}
+    </Link>
   );
 }
