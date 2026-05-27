@@ -151,7 +151,7 @@ export function StickerCard({
             className={cn(
               "rounded grid place-items-center text-center px-1 overflow-hidden",
               horizontal
-                ? "h-10 sm:h-auto sm:aspect-[7/5]"
+                ? "h-10 sm:h-32"
                 : stickerImage && !imgFailed
                   ? "h-32"
                   : "h-14",
