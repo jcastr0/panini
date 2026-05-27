@@ -383,7 +383,82 @@ team.save(f'{dst}/xxx13.jpg', 'JPEG', quality=85, optimize=True, progressive=Tru
 
 Después de rotar queda horizontal (~700×500) con "WE ARE COUNTRY" abajo
 y los 11+ jugadores en formación arriba. Si sale al revés (head-down),
-usar `rotate(90)` (positivo).
+usar `rotate(90)` (positivo). En Qatar P14 el team photo aparece rotado
+**180°** (cabeza abajo): `img.rotate(180, expand=True)`.
+
+### Paso 5.7 — Atajo: sprites 385×511 embebidos en el PDF (página A)
+
+**Descubrimiento clave**: en el álbum 101 páginas, cada Page A no es un
+mega-sprite — `page.get_images()` devuelve **una imagen por cromo**.
+Para los 16 slots del grid 4×4 hay 13 sprites pre-renderizados de
+**exactamente 385×511 px** (un cromo terminado, con todos los textos y
+adornos) y, para los 3 cromos restantes, **fotos base de alta
+resolución** (~1054×1492) sin componer.
+
+Esto vuelve la extracción mucho más limpia que recortar del render:
+
+```python
+import fitz
+doc = fitz.open(PDF)
+p = doc.load_page(12)  # P13 idx
+imgs = p.get_images(full=True)
+for img in imgs:
+    xref = img[0]
+    info = doc.extract_image(xref)
+    w, h = info['width'], info['height']
+    ext = info['ext']  # 'jpeg'
+    if w == 385 and h == 511:
+        # sprite cromo terminado — guardar directo
+        with open(f'/tmp/extract/s_{xref}.{ext}', 'wb') as f:
+            f.write(info['image'])
+    elif w > 800:
+        # foto base de alta resolución — requiere crop+resize (ver abajo)
+        with open(f'/tmp/extract/big_{xref}.{ext}', 'wb') as f:
+            f.write(info['image'])
+```
+
+Estos sprites NO traen orden — el orden es el del Z-order del PDF. Hay
+que abrir cada uno y mapear visualmente al jugador (igual que con el
+grid).
+
+#### Cuando un cromo viene como foto base (no sprite)
+
+Las big-images (~1054×1492) tienen aspect ratio ~0.706, mientras que
+los sprites e## son 385×511 = 0.753. **Si redimensionas directo a
+385×511, estiras horizontalmente y las caras quedan aplastadas.**
+
+La solución es hacer **crop centrado al ratio target** antes del
+resize:
+
+```python
+def crop_to_ratio(img, ratio):
+    w, h = img.size
+    current = w / h
+    if abs(current - ratio) < 1e-3:
+        return img
+    if current > ratio:
+        new_w = int(round(h * ratio))
+        x0 = (w - new_w) // 2
+        return img.crop((x0, 0, x0 + new_w, h))
+    else:
+        new_h = int(round(w / ratio))
+        y0 = (h - new_h) // 2
+        return img.crop((0, y0, w, y0 + new_h))
+
+TARGET = (385, 511)
+img = crop_to_ratio(Image.open(big_path), TARGET[0]/TARGET[1])
+img = img.resize(TARGET, Image.LANCZOS)
+img.save(out, 'JPEG', quality=85, optimize=True, progressive=True)
+```
+
+Se pierde ~3% de margen arriba y abajo (zona del "23" decorativo y del
+panel PANINI), pero el contenido relevante (cara, nombre, datos) queda
+intacto y el cromo se renderiza uniforme junto al resto del set.
+
+**Por qué importa**: el componente `StickerCard` usa `object-cover`,
+que respeta el aspect ratio del archivo. Si todos los cromos del país
+tienen ratios distintos, el recorte automático del navegador será
+inconsistente y se notará.
 
 ---
 
@@ -465,16 +540,26 @@ limpiar 950 archivos a mano.
 son **150 MB en el repo**. `quality=85` produce 40-60 KB con calidad
 indistinguible. **Si pesa mucho, bajá a quality=80** sin miedo.
 
+### ❌ Mezclar cromos con aspect ratios distintos
+
+Si extraés del PDF con `get_images()`, algunos cromos vienen como
+sprites 385×511 (ratio 0.753) y otros como fotos base 1054×1492
+(ratio ~0.706). **Si los guardás con sus dimensiones nativas, el grid
+del álbum los muestra deformes** porque `object-cover` respeta el
+aspect ratio de cada archivo. Aplicá `crop_to_ratio(0.753)` antes del
+resize a 385×511 — ver paso 5.7. Ojo: solo distorsiona el cromo
+puntual, pero se nota al lado de los uniformes.
+
 ---
 
 ## 8. Estado actual de la extracción (snapshot)
 
 A la fecha del último commit:
 
-- **9 países completos (20/20)**: 🇲🇽 MEX · 🇧🇷 BRA · 🇪🇨 ECU · 🇳🇱 NED ·
-  🇪🇸 ESP · 🇫🇷 FRA · 🇦🇷 ARG · 🇵🇹 POR · 🇨🇴 COL
-- **Resto (39 países)**: entre 10/20 y 19/20, total ~782 cromos sobre 960
-  posibles de equipos.
+- **Países completos (20/20)**: 🇲🇽 MEX · 🇧🇷 BRA · 🇪🇨 ECU · 🇳🇱 NED ·
+  🇪🇸 ESP · 🇫🇷 FRA · 🇦🇷 ARG · 🇵🇹 POR · 🇨🇴 COL · 🇨🇿 CZE · 🇨🇦 CAN ·
+  🇧🇦 BIH · 🇶🇦 QAT
+- **Resto**: entre 10/20 y 19/20.
 - **6 cromos de apertura** en `public/laminas/FWC/` (trofeo, logo,
   balón, mascotas).
 - **14 cromos Coca-Cola** completos en `public/cocacola/`.
