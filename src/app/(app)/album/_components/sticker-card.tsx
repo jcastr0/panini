@@ -111,6 +111,12 @@ export function StickerCard({
   const shiny = type === "shiny" || type === "legend";
   const decrementIsUnpaste = qty === 1;
 
+  // Para cromos Coca-Cola tenemos la imagen real (cc1.jpg..cc14.jpg) en
+  // /public/cocacola/. Sólo se muestra cuando está pegado — antes de pegarlo
+  // mantenemos el placeholder con el nombre (no spoiler).
+  const ccMatch = code?.match(/^CC(\d{1,2})$/);
+  const ccImage = ccMatch && owned ? `/cocacola/cc${ccMatch[1]}.jpg` : null;
+
   return (
     <>
       <div
@@ -141,22 +147,31 @@ export function StickerCard({
 
           <div
             className={cn(
-              "rounded grid place-items-center text-center px-1",
-              horizontal ? "h-10" : "h-14",
+              "rounded grid place-items-center text-center px-1 overflow-hidden",
+              horizontal ? "h-10" : ccImage ? "h-32" : "h-14",
               owned
                 ? "bg-[color-mix(in_oklab,var(--card),var(--accent-section,var(--pitch))_22%)] ring-1 ring-[color-mix(in_oklab,var(--accent-section,var(--pitch))_30%,transparent)]"
                 : "bg-[color-mix(in_oklab,var(--muted-foreground),transparent_85%)]",
             )}
           >
-            <span
-              className={cn(
-                "font-display font-semibold leading-tight",
-                horizontal ? "text-base" : "text-sm",
-                !owned && "text-muted-foreground/50 italic",
-              )}
-            >
-              {displayName}
-            </span>
+            {ccImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={ccImage}
+                alt={displayName}
+                className="size-full object-cover"
+              />
+            ) : (
+              <span
+                className={cn(
+                  "font-display font-semibold leading-tight",
+                  horizontal ? "text-base" : "text-sm",
+                  !owned && "text-muted-foreground/50 italic",
+                )}
+              >
+                {displayName}
+              </span>
+            )}
           </div>
 
           {team && team !== name && (

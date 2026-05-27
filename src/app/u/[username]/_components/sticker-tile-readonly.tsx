@@ -34,6 +34,10 @@ export function StickerTileReadOnly({
   const dup = quantity > 1;
   const shiny = type === "shiny" || type === "legend";
 
+  // Láminas Coca-Cola: si el amigo la tiene pegada, mostramos la imagen real
+  const ccMatch = code?.match(/^CC(\d{1,2})$/);
+  const ccImage = ccMatch && owned ? `/cocacola/cc${ccMatch[1]}.jpg` : null;
+
   return (
     <div
       className={cn(
@@ -61,21 +65,33 @@ export function StickerTileReadOnly({
       </div>
 
       <div
-        className="rounded h-12 grid place-items-center px-1 mb-1.5"
+        className={cn(
+          "rounded grid place-items-center px-1 mb-1.5 overflow-hidden",
+          ccImage ? "h-28" : "h-12",
+        )}
         style={{
           backgroundColor: owned
             ? `color-mix(in oklab, var(--card), ${accent} 12%)`
             : "var(--muted)",
         }}
       >
-        <span
-          className={cn(
-            "font-display font-semibold text-xs leading-tight text-center",
-            !owned && "italic text-muted-foreground",
-          )}
-        >
-          {displayName}
-        </span>
+        {ccImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={ccImage}
+            alt={displayName}
+            className="size-full object-cover"
+          />
+        ) : (
+          <span
+            className={cn(
+              "font-display font-semibold text-xs leading-tight text-center",
+              !owned && "italic text-muted-foreground",
+            )}
+          >
+            {displayName}
+          </span>
+        )}
       </div>
 
       {team && team !== name && (
