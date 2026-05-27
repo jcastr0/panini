@@ -1,9 +1,14 @@
+import { cn } from "@/lib/utils";
 import { StickerCard } from "./sticker-card";
 import type { SectionSticker } from "./team-block";
 
 /**
  * Render de páginas tipo "panel" para secciones sin equipos
  * (Apertura, Historia, Coca-Cola).
+ *
+ * Caso especial: la página "El Trofeo" (page=1 en apertura) tiene
+ * únicamente dos cromos — Trofeo Superior y Trofeo Inferior — y la
+ * idea es que se vean apilados verticalmente como un trofeo único.
  */
 export function SpecialSection({
   pages,
@@ -20,6 +25,7 @@ export function SpecialSection({
         const ownedInPage = list.filter(
           (s) => (qtyMap.get(s.id) ?? 0) >= 1,
         ).length;
+        const isTrofeo = list.length === 2 && list.every((s) => s.number === 1 || s.number === 2);
         return (
           <div
             key={page}
@@ -38,7 +44,14 @@ export function SpecialSection({
                 {ownedInPage}/{list.length}
               </span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div
+              className={cn(
+                "grid gap-3",
+                isTrofeo
+                  ? "grid-cols-1 max-w-[200px] mx-auto"
+                  : "grid-cols-2 sm:grid-cols-3",
+              )}
+            >
               {list.map((s) => (
                 <StickerCard
                   key={s.id}
