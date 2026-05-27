@@ -41,6 +41,7 @@ export function StickerCard({
   const [pending, startTransition] = useTransition();
   const [pop, setPop] = useState(false);
   const [askUnpaste, setAskUnpaste] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
   const popTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -111,11 +112,12 @@ export function StickerCard({
   const shiny = type === "shiny" || type === "legend";
   const decrementIsUnpaste = qty === 1;
 
-  // Para cromos Coca-Cola tenemos la imagen real (cc1.jpg..cc14.jpg) en
-  // /public/cocacola/. Sólo se muestra cuando está pegado — antes de pegarlo
-  // mantenemos el placeholder con el nombre (no spoiler).
-  const ccMatch = code?.match(/^CC(\d{1,2})$/);
-  const ccImage = ccMatch && owned ? `/cocacola/cc${ccMatch[1]}.jpg` : null;
+  // Imagen real del cromo cuando está pegado (no spoiler antes).
+  // - Equipos (MEX1, BIH3, ESP10...): /laminas/<CODE>/<code><n>.jpg
+  // - Coca-Cola (CC1..CC14):          /cocacola/cc<n>.jpg
+  // Cuando una imagen no existe en disco, el <img> dispara onError y
+  // volvemos al placeholder con el nombre.
+  const stickerImage = stickerImageFromCode(code, owned);
 
   return (
     <>
@@ -148,18 +150,19 @@ export function StickerCard({
           <div
             className={cn(
               "rounded grid place-items-center text-center px-1 overflow-hidden",
-              horizontal ? "h-10" : ccImage ? "h-32" : "h-14",
+              horizontal ? "h-10" : stickerImage && !imgFailed ? "h-32" : "h-14",
               owned
                 ? "bg-[color-mix(in_oklab,var(--card),var(--accent-section,var(--pitch))_22%)] ring-1 ring-[color-mix(in_oklab,var(--accent-section,var(--pitch))_30%,transparent)]"
                 : "bg-[color-mix(in_oklab,var(--muted-foreground),transparent_85%)]",
             )}
           >
-            {ccImage ? (
+            {stickerImage && !imgFailed ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={ccImage}
+                src={stickerImage}
                 alt={displayName}
                 className="size-full object-cover"
+                onError={() => setImgFailed(true)}
               />
             ) : (
               <span
@@ -258,4 +261,33 @@ export function StickerCard({
       </Dialog>
     </>
   );
+}
+
+/**
+ * Devuelve la URL de la lámina real para un código de cromo, o null si
+ * el cromo no está pegado (no spoilear).
+ *
+ *  - Equipos (3 letras + número): MEX1 → /laminas/MEX/mex1.jpg
+ *  - Coca-Cola (CC + número):     CC1  → /cocacola/cc1.jpg
+ *
+ * Si la imagen no existe en disco, el <img> dispara onError y caemos
+ * al placeholder con el nombre. Para agregar más láminas, basta con
+ * dropear los archivos en /public/laminas/<CODE>/ — no hay que tocar
+ * este componente.
+ */
+function stickerImageFromCode(
+  code: string | null,
+  owned: boolean,
+): string | null {
+  if (!owned || !code) return null;
+  const teamMatch = code.match(/^([A-Z]{3})(\d+)$/);
+  if (teamMatch) {
+    const [, prefix, n] = teamMatch;
+    return `/laminas/${prefix}/${prefix.toLowerCase()}${n}.jpg`;
+  }
+  const ccMatch = code.match(/^CC(\d{1,2})$/);
+  if (ccMatch) {
+    return `/cocacola/cc${ccMatch[1]}.jpg`;
+  }
+  return null;
 }

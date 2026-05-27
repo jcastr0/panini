@@ -34,9 +34,21 @@ export function StickerTileReadOnly({
   const dup = quantity > 1;
   const shiny = type === "shiny" || type === "legend";
 
-  // Láminas Coca-Cola: si el amigo la tiene pegada, mostramos la imagen real
-  const ccMatch = code?.match(/^CC(\d{1,2})$/);
-  const ccImage = ccMatch && owned ? `/cocacola/cc${ccMatch[1]}.jpg` : null;
+  // Imagen real del cromo si el amigo la tiene pegada.
+  // - Equipos (MEX1, BIH3...): /laminas/<CODE>/<code><n>.jpg
+  // - Coca-Cola (CC1..CC14):   /cocacola/cc<n>.jpg
+  // Si la imagen no existe (todavía no agregada), caemos al placeholder.
+  const ccImage = (() => {
+    if (!owned || !code) return null;
+    const team = code.match(/^([A-Z]{3})(\d+)$/);
+    if (team) {
+      const [, prefix, n] = team;
+      return `/laminas/${prefix}/${prefix.toLowerCase()}${n}.jpg`;
+    }
+    const cc = code.match(/^CC(\d{1,2})$/);
+    if (cc) return `/cocacola/cc${cc[1]}.jpg`;
+    return null;
+  })();
 
   return (
     <div
