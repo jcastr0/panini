@@ -33,7 +33,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         return {
           allowedContentTypes: ["image/jpeg", "image/png", "image/webp"],
-          maximumSizeInBytes: 5 * 1024 * 1024, // 5 MB hard limit
+          maximumSizeInBytes: 10 * 1024 * 1024, // 10 MB hard limit
           tokenPayload: JSON.stringify({ userId: user.id }),
         };
       },

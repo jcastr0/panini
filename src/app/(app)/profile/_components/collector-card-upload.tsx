@@ -11,7 +11,7 @@ import {
   removeCollectorCard,
 } from "../collector-card-actions";
 
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB — coincide con maximumSizeInBytes del endpoint
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB — coincide con maximumSizeInBytes del endpoint
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
 export function CollectorCardUpload({
@@ -42,7 +42,7 @@ export function CollectorCardUpload({
     }
     if (picked.size > MAX_BYTES) {
       setError(
-        `Pesa ${(picked.size / 1024 / 1024).toFixed(1)} MB · el máximo es 5 MB.`,
+        `Pesa ${(picked.size / 1024 / 1024).toFixed(1)} MB · el máximo es 10 MB.`,
       );
       return;
     }
@@ -144,7 +144,7 @@ export function CollectorCardUpload({
             className="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-border file:bg-background file:text-sm file:font-medium file:cursor-pointer hover:file:bg-muted disabled:opacity-50"
           />
           <p className="text-xs text-muted-foreground">
-            JPG, PNG o WebP · máx 5 MB · la procesamos a JPEG ≤300 KB
+            JPG, PNG o WebP · máx 10 MB · la procesamos a JPEG ≤300 KB
           </p>
 
           {error && (
