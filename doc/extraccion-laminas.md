@@ -255,6 +255,38 @@ content = img.crop(bbox) if bbox else img
 Después de esto, `content.size` es solo el área con cromos (~1670×2570
 para Page A, ~1670×550 para Page B).
 
+### Paso 5.2b — Detectar BORDES REALES del grid (no asumir W/4 × H/4)
+
+**Error común grave**: dividir `content` en celdas uniformes
+`(W/4, H/4)` corta cromos por la mitad porque el grid tiene márgenes
+internos. Hay que detectar los separadores blancos reales:
+
+```python
+import numpy as np
+arr = np.asarray(content)
+brightness = arr.mean(axis=2)
+row_min = brightness.min(axis=1)  # min de brillo por fila
+
+# Separadores horizontales: filas con brillo casi-blanco promedio
+inner_row_avg = brightness.mean(axis=1)
+sep_threshold = 245
+y_seps = np.where(inner_row_avg > sep_threshold)[0]
+# Agrupar runs consecutivos y tomar el punto medio de cada run interno
+# (descartar el primer/último run que son los márgenes de la página).
+```
+
+Para el álbum 101 (Page A típica de 1836×2577 px), los bordes reales son:
+- Filas: `y = 183, 740, 1302, 1865, 2425` (4 filas de ~557 px)
+- Cols: `x = 80, 498, 917, 1335, 1754` (4 cols de ~417 px)
+
+Los cromos miden ~417×557 (proporción 3:4 ≈ 0.74 ✓), NO 459×644 que
+sería `W/4 × H/4`. Asumir uniforme corta el cromo y deja ver el margen
+inferior + el header del siguiente cromo.
+
+**Regla**: SIEMPRE detectar bordes reales con análisis de brillo antes
+de recortar. Hardcodear coordenadas SOLO después de verificar
+visualmente que un cromo queda completo.
+
 ### Paso 5.3 — Generar grid etiquetado para identificación
 
 Antes de recortar a producción, **siempre** genero un grid 4×4 (Page A)
