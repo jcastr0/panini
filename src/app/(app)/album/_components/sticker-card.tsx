@@ -25,6 +25,13 @@ type Props = {
   initialQuantity: number;
   /** Variante ancha (col-span-2). Usado para Team Photo en hoja 2 */
   horizontal?: boolean;
+  /**
+   * Cuando el cromo es parte del trofeo armado, indica qué mitad ocupa.
+   * "top": controles arriba, imagen abajo, sin redondeo inferior.
+   * "bottom": imagen arriba, controles abajo, sin redondeo superior.
+   * Sin valor: render normal.
+   */
+  trofeoHalf?: "top" | "bottom";
 };
 
 export function StickerCard({
@@ -36,6 +43,7 @@ export function StickerCard({
   type,
   initialQuantity,
   horizontal = false,
+  trofeoHalf,
 }: Props) {
   const [qty, setQty] = useState(initialQuantity);
   const [pending, startTransition] = useTransition();
@@ -119,6 +127,80 @@ export function StickerCard({
   // volvemos al placeholder con el nombre.
   const stickerImage = stickerImageFromCode(code, owned);
 
+  const isTrofeoTop = trofeoHalf === "top";
+  const isTrofeoBottom = trofeoHalf === "bottom";
+
+  const header = (
+    <div className="flex items-center justify-between gap-1">
+      <span
+        className="font-mono font-black tabular tracking-tight text-sm sm:text-base leading-none text-[var(--accent-section,var(--pitch))]"
+        aria-label={`Código ${label}`}
+      >
+        {label}
+      </span>
+      {shiny && (
+        <Sparkles
+          className="size-3.5 text-[var(--gold)]"
+          aria-label="brillante"
+        />
+      )}
+    </div>
+  );
+
+  const imageBlock = (
+    <div
+      className={cn(
+        "grid place-items-center text-center px-1 overflow-hidden",
+        // Sin redondeo cuando es parte del trofeo en el borde que se une
+        isTrofeoTop
+          ? "rounded-t rounded-b-none"
+          : isTrofeoBottom
+            ? "rounded-b rounded-t-none"
+            : "rounded",
+        horizontal
+          ? "h-10 sm:h-32"
+          : stickerImage && !imgFailed
+            ? "h-32"
+            : "h-14",
+        owned
+          ? "bg-[color-mix(in_oklab,var(--card),var(--accent-section,var(--pitch))_22%)] ring-1 ring-[color-mix(in_oklab,var(--accent-section,var(--pitch))_30%,transparent)]"
+          : "bg-[color-mix(in_oklab,var(--muted-foreground),transparent_85%)]",
+      )}
+    >
+      {stickerImage && !imgFailed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={stickerImage}
+          alt={displayName}
+          className="size-full object-cover"
+          onError={() => setImgFailed(true)}
+        />
+      ) : (
+        <span
+          className={cn(
+            "font-display font-semibold leading-tight",
+            horizontal ? "text-base" : "text-sm",
+            !owned && "text-muted-foreground/50 italic",
+          )}
+        >
+          {displayName}
+        </span>
+      )}
+    </div>
+  );
+
+  const nameBlock =
+    team && team !== name ? (
+      <div
+        className={cn(
+          "text-[11px] leading-tight truncate",
+          owned ? "text-foreground/80 font-medium" : "text-muted-foreground/60",
+        )}
+      >
+        {name}
+      </div>
+    ) : null;
+
   return (
     <>
       <div
@@ -129,109 +211,84 @@ export function StickerCard({
           shiny && owned && "sticker-slot--shiny",
           pop && "pop-on-mark",
           pending && "opacity-70",
+          // Modo trofeo: quitar redondeo en el borde que se une al otro cromo
+          isTrofeoTop && "rounded-b-none pb-0",
+          isTrofeoBottom && "rounded-t-none pt-0",
         )}
       >
         <div className="relative z-10 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-1">
-            <span
-              className="font-mono font-black tabular tracking-tight text-sm sm:text-base leading-none text-[var(--accent-section,var(--pitch))]"
-              aria-label={`Código ${label}`}
-            >
-              {label}
-            </span>
-            {shiny && (
-              <Sparkles
-                className="size-3.5 text-[var(--gold)]"
-                aria-label="brillante"
-              />
-            )}
-          </div>
+          {(() => {
+            const controls = (
+              <div className="flex items-center justify-between mt-1 gap-2">
+                <button
+                  type="button"
+                  onClick={handleDecrement}
+                  disabled={qty === 0 || pending}
+                  aria-label={decrementIsUnpaste ? "Despegar" : "Quitar uno"}
+                  className={cn(
+                    "size-10 rounded-md border grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors active:scale-95",
+                    decrementIsUnpaste
+                      ? "border-[var(--panini-red)]/40 text-[var(--panini-red)] hover:bg-[var(--panini-red)]/10"
+                      : "border-border/70 hover:bg-muted",
+                  )}
+                >
+                  {decrementIsUnpaste ? (
+                    <Trash2 className="size-4" />
+                  ) : (
+                    <Minus className="size-4" />
+                  )}
+                </button>
+                <span
+                  className={cn(
+                    "font-mono tabular text-base min-w-[2ch] text-center font-semibold",
+                    dup && "text-[var(--gold)]",
+                    !owned && "text-muted-foreground font-normal",
+                  )}
+                >
+                  {qty}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => commit(qty + 1)}
+                  disabled={pending}
+                  aria-label="Agregar uno"
+                  className="size-10 rounded-md border border-border/70 grid place-items-center hover:bg-muted disabled:opacity-30 transition-colors active:scale-95"
+                >
+                  <Plus className="size-4" />
+                </button>
+              </div>
+            );
 
-          <div
-            className={cn(
-              "rounded grid place-items-center text-center px-1 overflow-hidden",
-              horizontal
-                ? "h-10 sm:h-32"
-                : stickerImage && !imgFailed
-                  ? "h-32"
-                  : "h-14",
-              owned
-                ? "bg-[color-mix(in_oklab,var(--card),var(--accent-section,var(--pitch))_22%)] ring-1 ring-[color-mix(in_oklab,var(--accent-section,var(--pitch))_30%,transparent)]"
-                : "bg-[color-mix(in_oklab,var(--muted-foreground),transparent_85%)]",
-            )}
-          >
-            {stickerImage && !imgFailed ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={stickerImage}
-                alt={displayName}
-                className="size-full object-cover"
-                onError={() => setImgFailed(true)}
-              />
-            ) : (
-              <span
-                className={cn(
-                  "font-display font-semibold leading-tight",
-                  horizontal ? "text-base" : "text-sm",
-                  !owned && "text-muted-foreground/50 italic",
-                )}
-              >
-                {displayName}
-              </span>
-            )}
-          </div>
-
-          {team && team !== name && (
-            <div
-              className={cn(
-                "text-[11px] leading-tight truncate",
-                owned
-                  ? "text-foreground/80 font-medium"
-                  : "text-muted-foreground/60",
-              )}
-            >
-              {name}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between mt-1 gap-2">
-            <button
-              type="button"
-              onClick={handleDecrement}
-              disabled={qty === 0 || pending}
-              aria-label={decrementIsUnpaste ? "Despegar" : "Quitar uno"}
-              className={cn(
-                "size-10 rounded-md border grid place-items-center disabled:opacity-30 disabled:cursor-not-allowed transition-colors active:scale-95",
-                decrementIsUnpaste
-                  ? "border-[var(--panini-red)]/40 text-[var(--panini-red)] hover:bg-[var(--panini-red)]/10"
-                  : "border-border/70 hover:bg-muted",
-              )}
-            >
-              {decrementIsUnpaste ? (
-                <Trash2 className="size-4" />
-              ) : (
-                <Minus className="size-4" />
-              )}
-            </button>
-            <span
-              className={cn(
-                "font-mono tabular text-base min-w-[2ch] text-center font-semibold",
-                dup && "text-[var(--gold)]",
-                !owned && "text-muted-foreground font-normal",
-              )}
-            >
-              {qty}
-            </span>
-            <button
-              type="button"
-              onClick={() => commit(qty + 1)}
-              disabled={pending}
-              aria-label="Agregar uno"
-              className="size-10 rounded-md border border-border/70 grid place-items-center hover:bg-muted disabled:opacity-30 transition-colors active:scale-95"
-            >
-              <Plus className="size-4" />
-            </button>
-          </div>
+            if (isTrofeoTop) {
+              // Controles arriba, imagen abajo (pegada al borde inferior).
+              return (
+                <>
+                  {header}
+                  {controls}
+                  {imageBlock}
+                </>
+              );
+            }
+            if (isTrofeoBottom) {
+              // Imagen arriba (pegada al borde superior), controles abajo.
+              return (
+                <>
+                  {imageBlock}
+                  {header}
+                  {nameBlock}
+                  {controls}
+                </>
+              );
+            }
+            return (
+              <>
+                {header}
+                {imageBlock}
+                {nameBlock}
+                {controls}
+              </>
+            );
+          })()}
         </div>
       </div>
 

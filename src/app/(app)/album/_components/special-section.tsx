@@ -46,10 +46,10 @@ export function SpecialSection({
             </div>
             <div
               className={cn(
-                "grid gap-3",
+                "grid",
                 isTrofeo
-                  ? "grid-cols-1 max-w-[200px] mx-auto"
-                  : "grid-cols-2 sm:grid-cols-3",
+                  ? "grid-cols-1 max-w-[220px] mx-auto gap-0"
+                  : "grid-cols-2 sm:grid-cols-3 gap-3",
               )}
             >
               {list.map((s) => (
@@ -62,6 +62,13 @@ export function SpecialSection({
                   team={s.team}
                   type={s.type}
                   initialQuantity={qtyMap.get(s.id) ?? 0}
+                  trofeoHalf={
+                    isTrofeo
+                      ? s.number === 1
+                        ? "top"
+                        : "bottom"
+                      : undefined
+                  }
                 />
               ))}
             </div>
