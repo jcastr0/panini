@@ -274,7 +274,7 @@ function Page2Grid({
     );
   });
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 auto-rows-fr">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 auto-rows-min sm:auto-rows-min">
       {items}
     </div>
   );
