@@ -289,5 +289,12 @@ function stickerImageFromCode(
   if (ccMatch) {
     return `/cocacola/cc${ccMatch[1]}.jpg`;
   }
+  // Códigos numéricos puros (apertura/historia): "00", "1"..."19".
+  // Apertura tiene fwc1..fwc8 con escudo del torneo. Historia 9..19 usaría
+  // el mismo path /laminas/FWC/fwc<N>.jpg cuando se agreguen.
+  const numMatch = code.match(/^(\d+)$/);
+  if (numMatch) {
+    return `/laminas/FWC/fwc${numMatch[1]}.jpg`;
+  }
   return null;
 }

@@ -47,6 +47,8 @@ export function StickerTileReadOnly({
     }
     const cc = code.match(/^CC(\d{1,2})$/);
     if (cc) return `/cocacola/cc${cc[1]}.jpg`;
+    const num = code.match(/^(\d+)$/);
+    if (num) return `/laminas/FWC/fwc${num[1]}.jpg`;
     return null;
   })();
 
