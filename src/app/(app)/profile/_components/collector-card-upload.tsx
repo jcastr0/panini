@@ -1,23 +1,17 @@
 "use client";
 
-import {
-  useActionState,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useRef, useState, useTransition } from "react";
 import { ImagePlus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { upload } from "@vercel/blob/client";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  processCollectorCardFromBlob,
   removeCollectorCard,
-  uploadCollectorCard,
-  type UploadState,
 } from "../collector-card-actions";
 
-const MAX_BYTES = 3 * 1024 * 1024;
+const MAX_BYTES = 5 * 1024 * 1024; // 5 MB — coincide con maximumSizeInBytes del endpoint
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
 export function CollectorCardUpload({
@@ -27,46 +21,73 @@ export function CollectorCardUpload({
   current: string | null;
   username: string;
 }) {
-  const [state, action, pending] = useActionState<UploadState, FormData>(
-    uploadCollectorCard,
-    {},
-  );
-  const [, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const [phase, setPhase] = useState<"idle" | "uploading" | "processing">(
+    "idle",
+  );
 
-  useEffect(() => {
-    if (state.success) {
-      toast.success(
-        state.sizeKB
-          ? `Lámina guardada (${state.sizeKB} KB).`
-          : "Lámina guardada.",
-      );
-      setPreview(null);
-      if (inputRef.current) inputRef.current.value = "";
-    }
-  }, [state]);
+  function onChoose(picked: File | null) {
+    setError(null);
+    setFile(null);
+    setPreview(null);
+    if (!picked) return;
 
-  function onChoose(file: File | null) {
-    setLocalError(null);
-    if (!file) {
-      setPreview(null);
+    if (!ALLOWED.includes(picked.type)) {
+      setError("Formato no soportado. Usa JPG, PNG o WebP.");
       return;
     }
-    if (!ALLOWED.includes(file.type)) {
-      setLocalError("Formato no soportado. Usa JPG, PNG o WebP.");
-      return;
-    }
-    if (file.size > MAX_BYTES) {
-      setLocalError(
-        `Pesa ${(file.size / 1024 / 1024).toFixed(1)} MB · el máximo es 3 MB.`,
+    if (picked.size > MAX_BYTES) {
+      setError(
+        `Pesa ${(picked.size / 1024 / 1024).toFixed(1)} MB · el máximo es 5 MB.`,
       );
       return;
     }
+    setFile(picked);
     const reader = new FileReader();
     reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(picked);
+  }
+
+  async function handleSubmit() {
+    if (!file) return;
+    setError(null);
+    setPhase("uploading");
+    try {
+      // 1. Sube directo a Vercel Blob (bypassea el límite 1MB de Server Actions)
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const blob = await upload(`${Date.now()}.${ext}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/blob/upload",
+      });
+
+      // 2. Server action descarga, comprime con sharp y guarda en DB
+      setPhase("processing");
+      const fd = new FormData();
+      fd.append("blobUrl", blob.url);
+      const res = await processCollectorCardFromBlob({}, fd);
+
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+
+      toast.success(
+        res.sizeKB ? `Lámina guardada (${res.sizeKB} KB).` : "Lámina guardada.",
+      );
+      setFile(null);
+      setPreview(null);
+      if (inputRef.current) inputRef.current.value = "";
+    } catch (err) {
+      // Maneja errores de red, 401, 413, abort, etc. — no deja la página colgada
+      const msg = err instanceof Error ? err.message : "Error al subir";
+      setError(msg);
+    } finally {
+      setPhase("idle");
+    }
   }
 
   function handleRemove() {
@@ -82,6 +103,7 @@ export function CollectorCardUpload({
   }
 
   const shown = preview ?? (current ? `data:image/jpeg;base64,${current}` : null);
+  const busy = phase !== "idle" || pending;
 
   return (
     <div className="space-y-4 border rounded-2xl p-5 bg-card">
@@ -96,9 +118,7 @@ export function CollectorCardUpload({
       </div>
 
       <div className="flex gap-5 items-start">
-        <div
-          className="w-32 sm:w-40 aspect-[3/4] rounded-xl border bg-muted/40 overflow-hidden shrink-0 grid place-items-center text-muted-foreground"
-        >
+        <div className="w-32 sm:w-40 aspect-[3/4] rounded-xl border bg-muted/40 overflow-hidden shrink-0 grid place-items-center text-muted-foreground">
           {shown ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -114,28 +134,34 @@ export function CollectorCardUpload({
           )}
         </div>
 
-        <form action={action} className="flex-1 space-y-3">
+        <div className="flex-1 space-y-3">
           <input
             ref={inputRef}
             type="file"
-            name="file"
             accept="image/jpeg,image/png,image/webp"
+            disabled={busy}
             onChange={(e) => onChoose(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-border file:bg-background file:text-sm file:font-medium file:cursor-pointer hover:file:bg-muted"
+            className="block w-full text-sm file:mr-3 file:py-2 file:px-3 file:rounded-md file:border file:border-border file:bg-background file:text-sm file:font-medium file:cursor-pointer hover:file:bg-muted disabled:opacity-50"
           />
           <p className="text-xs text-muted-foreground">
-            JPG, PNG o WebP · máx 3 MB · la procesamos a JPEG ≤300 KB
+            JPG, PNG o WebP · máx 5 MB · la procesamos a JPEG ≤300 KB
           </p>
 
-          {(localError || state.error) && (
+          {error && (
             <Alert variant="destructive">
-              <AlertDescription>{localError || state.error}</AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={pending || !!localError}>
-              {pending ? (
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={busy || !file}
+            >
+              {phase === "uploading" ? (
+                "Subiendo…"
+              ) : phase === "processing" ? (
                 "Procesando…"
               ) : (
                 <>
@@ -144,26 +170,27 @@ export function CollectorCardUpload({
                 </>
               )}
             </Button>
-            {preview && (
+            {preview && !busy && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
+                  setFile(null);
                   setPreview(null);
-                  setLocalError(null);
+                  setError(null);
                   if (inputRef.current) inputRef.current.value = "";
                 }}
               >
                 <X className="size-4 mr-1" /> Cancelar
               </Button>
             )}
-            {current && !preview && (
+            {current && !preview && !busy && (
               <Button type="button" variant="outline" onClick={handleRemove}>
                 <Trash2 className="size-4 mr-1" /> Quitar
               </Button>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

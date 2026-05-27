@@ -2,11 +2,10 @@
 
 import sharp from "sharp";
 import { revalidatePath } from "next/cache";
+import { del } from "@vercel/blob";
 import { createClient } from "@/lib/supabase/server";
 
-const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3 MB raw
 const TARGET_BYTES = 300 * 1024; // 300 KB base64 final
-const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
 
 export type UploadState = {
   error?: string;
@@ -14,7 +13,15 @@ export type UploadState = {
   sizeKB?: number;
 };
 
-export async function uploadCollectorCard(
+/**
+ * Procesa la lámina ya subida a Vercel Blob:
+ *   1. Valida que el blob pertenece a este usuario (path scope)
+ *   2. Descarga el binario
+ *   3. Comprime con sharp a JPEG ≤ 300 KB base64 (loop adaptativo de quality)
+ *   4. Guarda el base64 en profiles.collector_card_base64
+ *   5. Borra el blob temporal (era sólo un buffer de tránsito)
+ */
+export async function processCollectorCardFromBlob(
   _prev: UploadState,
   formData: FormData,
 ): Promise<UploadState> {
@@ -24,42 +31,56 @@ export async function uploadCollectorCard(
   } = await supabase.auth.getUser();
   if (!user) return { error: "No autenticado" };
 
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return { error: "Archivo no recibido" };
-  }
-  if (file.size === 0) return { error: "Archivo vacío" };
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return {
-      error: `La imagen supera 3 MB (pesa ${(file.size / 1024 / 1024).toFixed(1)} MB).`,
-    };
-  }
-  if (!ALLOWED_MIME.includes(file.type)) {
-    return { error: "Formato no soportado. Usa JPG, PNG o WebP." };
+  const blobUrl = formData.get("blobUrl");
+  if (typeof blobUrl !== "string" || !blobUrl) {
+    return { error: "URL del blob no recibida" };
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
+  // Guard-rail: la URL debe contener la ruta del usuario para evitar que
+  // alguien suba un blob ajeno y nos haga procesarlo.
+  if (!blobUrl.includes(`profile-card-temp/${user.id}/`)) {
+    return { error: "URL del blob no autorizada" };
+  }
 
-  // Procesar con sharp: orientación EXIF + resize a proporción 3:4 + JPEG comprimido
-  // Loop adaptativo de calidad para garantizar ≤300 KB en base64.
+  let buffer: Buffer;
+  try {
+    const res = await fetch(blobUrl, { cache: "no-store" });
+    if (!res.ok) {
+      return { error: `No se pudo descargar el blob (${res.status})` };
+    }
+    buffer = Buffer.from(await res.arrayBuffer());
+  } catch {
+    return { error: "Error al descargar el blob temporal" };
+  }
+
+  // Comprimir con loop adaptativo de calidad hasta caber en TARGET_BYTES base64
   let quality = 80;
   let processed: Buffer | null = null;
   let base64Bytes = Infinity;
-  for (; quality >= 40; quality -= 10) {
-    processed = await sharp(buffer)
-      .rotate()
-      .resize({ width: 600, height: 800, fit: "cover", position: "attention" })
-      .jpeg({ quality, mozjpeg: true })
-      .toBuffer();
-    // base64 = ceil(bytes / 3) * 4 — estimación
-    base64Bytes = Math.ceil(processed.length / 3) * 4;
-    if (base64Bytes <= TARGET_BYTES) break;
-  }
-  if (!processed || base64Bytes > TARGET_BYTES) {
+  try {
+    for (; quality >= 40; quality -= 10) {
+      processed = await sharp(buffer)
+        .rotate()
+        .resize({ width: 600, height: 800, fit: "cover", position: "attention" })
+        .jpeg({ quality, mozjpeg: true })
+        .toBuffer();
+      base64Bytes = Math.ceil(processed.length / 3) * 4;
+      if (base64Bytes <= TARGET_BYTES) break;
+    }
+  } catch (err) {
+    await safeDelete(blobUrl);
     return {
-      error: "No se pudo comprimir la imagen lo suficiente. Intenta con otra.",
+      error: err instanceof Error ? err.message : "Error procesando la imagen",
     };
   }
+
+  if (!processed || base64Bytes > TARGET_BYTES) {
+    await safeDelete(blobUrl);
+    return {
+      error: "No se pudo comprimir lo suficiente. Probá con otra imagen.",
+    };
+  }
+
   const base64 = processed.toString("base64");
 
   const { error } = await supabase
@@ -69,6 +90,11 @@ export async function uploadCollectorCard(
       collector_card_updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);
+
+  // Borrar el blob temporal pase lo que pase (no nos importa si falla,
+  // Vercel limpia eventualmente y no es data del usuario).
+  await safeDelete(blobUrl);
+
   if (error) return { error: error.message };
 
   revalidatePath("/", "layout");
@@ -93,4 +119,12 @@ export async function removeCollectorCard() {
 
   revalidatePath("/", "layout");
   return { success: true };
+}
+
+async function safeDelete(blobUrl: string) {
+  try {
+    await del(blobUrl);
+  } catch {
+    // ignore — no es crítico, blob queda como huérfano y Vercel lo recolecta
+  }
 }
