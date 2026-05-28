@@ -35,6 +35,7 @@ export default async function ProfilePage() {
       <CollectorCardUpload
         current={profile?.collector_card_base64 ?? null}
         username={profile?.username ?? ""}
+        userId={user.id}
       />
 
       <Link

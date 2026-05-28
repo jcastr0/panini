@@ -17,9 +17,11 @@ const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 export function CollectorCardUpload({
   current,
   username,
+  userId,
 }: {
   current: string | null;
   username: string;
+  userId: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -57,9 +59,13 @@ export function CollectorCardUpload({
     setError(null);
     setPhase("uploading");
     try {
-      // 1. Sube directo a Vercel Blob (bypassea el límite 1MB de Server Actions)
+      // 1. Sube directo a Vercel Blob (bypassea el límite 1MB de Server Actions).
+      //    El path DEBE empezar con `profile-card-temp/${userId}/` para que el
+      //    server route /api/blob/upload acepte (valida pathname contra el
+      //    user.id de la sesión Supabase). Sin este prefijo → 400.
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const blob = await upload(`${Date.now()}.${ext}`, file, {
+      const pathname = `profile-card-temp/${userId}/${Date.now()}.${ext}`;
+      const blob = await upload(pathname, file, {
         access: "private",
         handleUploadUrl: "/api/blob/upload",
       });
