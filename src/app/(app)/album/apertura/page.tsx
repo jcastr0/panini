@@ -7,7 +7,7 @@ import {
   paginate,
 } from "@/lib/queries";
 import { sectionHref, sectionLabel, SPECIAL_SECTIONS } from "@/lib/album-config";
-import { FifaIcon } from "@/components/icons/FifaIcon";
+import { Fwc2026Icon } from "@/components/icons/Fwc2026Icon";
 import { SpecialSectionPage } from "../_components/special-section-page";
 import type { SectionSticker } from "../_components/team-block";
 
@@ -55,7 +55,7 @@ export default async function AperturaPage() {
     <SpecialSectionPage
       sectionKey="apertura"
       badge="Sección · Apertura"
-      letter={<FifaIcon className="h-20 sm:h-28 lg:h-36 w-auto" />}
+      letter={<Fwc2026Icon className="h-[clamp(5rem,18vw,10rem)] w-auto" />}
       subtitle="Portada, trofeo, sedes y balón oficial."
       accent={SPECIAL_SECTIONS.apertura.accent}
       tint={SPECIAL_SECTIONS.apertura.tint}

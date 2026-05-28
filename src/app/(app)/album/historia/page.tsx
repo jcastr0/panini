@@ -7,7 +7,7 @@ import {
   paginate,
 } from "@/lib/queries";
 import { sectionHref, sectionLabel, SPECIAL_SECTIONS } from "@/lib/album-config";
-import { TrophyIcon } from "@/components/icons/TrophyIcon";
+import { Fwc2026EmblemIcon } from "@/components/icons/Fwc2026EmblemIcon";
 import { SpecialSectionPage } from "../_components/special-section-page";
 import type { SectionSticker } from "../_components/team-block";
 
@@ -48,7 +48,7 @@ export default async function HistoriaPage() {
     <SpecialSectionPage
       sectionKey="historia"
       badge="Sección · Historia"
-      letter={<TrophyIcon className="h-28 sm:h-36 lg:h-48 w-auto" />}
+      letter={<Fwc2026EmblemIcon className="h-[clamp(5rem,20vw,12rem)] w-auto" />}
       subtitle="Once cromos foil con los campeones del mundo desde 1934."
       accent={SPECIAL_SECTIONS.historia.accent}
       tint={SPECIAL_SECTIONS.historia.tint}

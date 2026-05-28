@@ -36,7 +36,7 @@ export const SPECIAL_SECTIONS: Record<
   SpecialKey,
   { accent: string; tint: string; label: string; emoji: string }
 > = {
-  apertura:    { accent: "var(--pitch)",      tint: "oklch(0.96 0.02 90)",  label: "Apertura",    emoji: "🎉" },
+  apertura:    { accent: "var(--panini-blue)", tint: "oklch(0.96 0.02 250)", label: "Apertura",    emoji: "🎉" },
   historia:    { accent: "var(--gold)",       tint: "oklch(0.96 0.05 85)",  label: "Historia",    emoji: "🏆" },
   legends:     { accent: "var(--gold)",       tint: "oklch(0.97 0.06 88)",  label: "Legends",     emoji: "⭐" },
   "coca-cola": { accent: "var(--panini-red)", tint: "oklch(0.96 0.04 25)",  label: "Coca-Cola",   emoji: "⭐" },

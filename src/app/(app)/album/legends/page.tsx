@@ -7,7 +7,7 @@ import {
   paginate,
 } from "@/lib/queries";
 import { sectionHref, sectionLabel, SPECIAL_SECTIONS } from "@/lib/album-config";
-import { TrophyIcon } from "@/components/icons/TrophyIcon";
+import { Fwc2026EmblemIcon } from "@/components/icons/Fwc2026EmblemIcon";
 import { SpecialSectionPage } from "../_components/special-section-page";
 import type { SectionSticker } from "../_components/team-block";
 
@@ -49,10 +49,10 @@ export default async function LegendsPage() {
       badge="Sección · Legends"
       letter={
         <span className="flex flex-col items-center gap-2">
-          <TrophyIcon className="h-24 sm:h-32 lg:h-40 w-auto" />
+          <Fwc2026EmblemIcon className="h-[clamp(4rem,16vw,9rem)] w-auto" />
           <span
-            className="font-display font-black tracking-[0.25em] uppercase"
-            style={{ fontSize: "clamp(1rem, 3vw, 1.75rem)" }}
+            className="font-display font-black tracking-[0.28em] uppercase leading-none"
+            style={{ fontSize: "clamp(0.85rem, 2.8vw, 1.5rem)" }}
           >
             Legends
           </span>

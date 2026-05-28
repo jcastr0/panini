@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { FifaIcon } from "@/components/icons/FifaIcon";
-import { TrophyIcon } from "@/components/icons/TrophyIcon";
+import { Fwc2026Icon } from "@/components/icons/Fwc2026Icon";
+import { Fwc2026EmblemIcon } from "@/components/icons/Fwc2026EmblemIcon";
 import { CocaColaIcon } from "@/components/icons/CocaColaIcon";
 import {
   GROUP_TEAMS,
@@ -14,17 +14,20 @@ import {
 } from "@/lib/album-config";
 
 const SPECIAL_ICONS: Record<SpecialKey, React.ReactNode> = {
-  apertura:    <FifaIcon    className="h-10 w-auto" />,
-  historia:    <TrophyIcon  className="size-14" />,
+  /* logo mark portrait 412×636 → h fija, w auto */
+  apertura:    <Fwc2026Icon className="h-16 w-auto" />,
+  /* emblema cuadrado 1320×1320 → size cuadrado */
+  historia:    <Fwc2026EmblemIcon className="size-16" />,
   legends: (
     <span className="flex flex-col items-center gap-1">
-      <TrophyIcon className="size-10" />
-      <span className="font-display font-black text-xs tracking-[0.2em] uppercase">
+      <Fwc2026EmblemIcon className="size-12" />
+      <span className="font-display font-black text-[10px] tracking-[0.22em] uppercase">
         Legends
       </span>
     </span>
   ),
-  "coca-cola": <CocaColaIcon className="h-7 w-auto" />,
+  /* wordmark horizontal → h pequeña, w auto, max-width para no desbordarse */
+  "coca-cola": <CocaColaIcon className="h-6 w-auto max-w-[5.5rem]" />,
 };
 
 type SectionKey = GroupCode | SpecialKey;
