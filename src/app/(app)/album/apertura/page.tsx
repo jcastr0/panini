@@ -68,40 +68,9 @@ export default async function AperturaPage() {
         label: sectionLabel("A"),
       }}
       extraSlot={
-        collectorCard?.collector_card_base64 ? (
-          <YourCardBanner base64={collectorCard.collector_card_base64} />
-        ) : (
-          <UploadCardPrompt />
-        )
+        !collectorCard?.collector_card_base64 ? <UploadCardPrompt /> : undefined
       }
     />
-  );
-}
-
-function YourCardBanner({ base64 }: { base64: string }) {
-  return (
-    <div className="rounded-2xl border bg-card p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
-      <div className="w-24 sm:w-32 aspect-[3/4] rounded-lg overflow-hidden ring-1 ring-border shadow-md shrink-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`data:image/jpeg;base64,${base64}`}
-          alt="Tu lámina del coleccionista"
-          className="size-full object-cover"
-        />
-      </div>
-      <div className="space-y-1">
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Tu lámina destacada
-        </span>
-        <h3 className="font-display text-xl sm:text-2xl font-semibold tracking-tight">
-          La portada es tuya
-        </h3>
-        <p className="text-sm text-muted-foreground max-w-md">
-          Esta lámina aparece en cada sección del álbum y permite que quien lo
-          vea sepa que es tuyo.
-        </p>
-      </div>
-    </div>
   );
 }
 
