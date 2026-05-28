@@ -4,8 +4,25 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveAlbum, getStickersBySection, paginate } from "@/lib/queries";
 import { SPECIAL_SECTIONS, type SpecialKey } from "@/lib/album-config";
+import { FifaIcon } from "@/components/icons/FifaIcon";
+import { TrophyIcon } from "@/components/icons/TrophyIcon";
+import { CocaColaIcon } from "@/components/icons/CocaColaIcon";
 import { SpecialSection } from "@/app/(app)/album/_components/special-section";
 import type { SectionSticker } from "@/app/(app)/album/_components/team-block";
+
+const SECTION_ICONS: Record<SpecialKey, React.ReactNode> = {
+  apertura:    <FifaIcon    className="h-16 sm:h-24 w-auto" />,
+  historia:    <TrophyIcon  className="h-16 sm:h-24 w-auto" />,
+  legends: (
+    <span className="flex flex-col items-center gap-1.5">
+      <TrophyIcon className="h-12 sm:h-20 w-auto" />
+      <span className="font-display font-black tracking-[0.25em] uppercase text-sm sm:text-lg">
+        Legends
+      </span>
+    </span>
+  ),
+  "coca-cola": <CocaColaIcon className="h-10 sm:h-14 w-auto max-w-[12rem] sm:max-w-[16rem]" />,
+};
 
 const VALID_SECTIONS = new Set<SpecialKey>([
   "apertura",
@@ -117,7 +134,7 @@ export default async function PublicSpecialSectionPage({
                 fontSize: "clamp(2.5rem, 8vw, 4.5rem)",
               }}
             >
-              {special.emoji} {special.label}
+              {SECTION_ICONS[section as SpecialKey]}
             </div>
           </div>
 

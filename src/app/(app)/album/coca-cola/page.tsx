@@ -7,6 +7,7 @@ import {
   paginate,
 } from "@/lib/queries";
 import { sectionHref, sectionLabel, SPECIAL_SECTIONS } from "@/lib/album-config";
+import { CocaColaIcon } from "@/components/icons/CocaColaIcon";
 import { SpecialSectionPage } from "../_components/special-section-page";
 import type { SectionSticker } from "../_components/team-block";
 
@@ -45,7 +46,7 @@ export default async function CocaColaPage() {
     <SpecialSectionPage
       sectionKey="coca-cola"
       badge="Sección · Coca-Cola"
-      letter={<span aria-hidden>⭐</span>}
+      letter={<CocaColaIcon className="h-14 sm:h-20 lg:h-24 w-auto max-w-[14rem] sm:max-w-[18rem]" />}
       subtitle="Cromos especiales del sponsor del torneo."
       accent={SPECIAL_SECTIONS["coca-cola"].accent}
       tint={SPECIAL_SECTIONS["coca-cola"].tint}

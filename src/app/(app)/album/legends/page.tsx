@@ -7,6 +7,7 @@ import {
   paginate,
 } from "@/lib/queries";
 import { sectionHref, sectionLabel, SPECIAL_SECTIONS } from "@/lib/album-config";
+import { TrophyIcon } from "@/components/icons/TrophyIcon";
 import { SpecialSectionPage } from "../_components/special-section-page";
 import type { SectionSticker } from "../_components/team-block";
 
@@ -46,7 +47,17 @@ export default async function LegendsPage() {
     <SpecialSectionPage
       sectionKey="legends"
       badge="Sección · Legends"
-      letter={<span aria-hidden>⭐</span>}
+      letter={
+        <span className="flex flex-col items-center gap-2">
+          <TrophyIcon className="h-24 sm:h-32 lg:h-40 w-auto" />
+          <span
+            className="font-display font-black tracking-[0.25em] uppercase"
+            style={{ fontSize: "clamp(1rem, 3vw, 1.75rem)" }}
+          >
+            Legends
+          </span>
+        </span>
+      }
       subtitle="27 cromos dorados de las leyendas del Mundial."
       accent={SPECIAL_SECTIONS.legends.accent}
       tint={SPECIAL_SECTIONS.legends.tint}
