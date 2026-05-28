@@ -17,17 +17,12 @@ export default async function AmigosPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("username")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  // Búsqueda: si q tiene 1+ caracteres, busca por prefijo ilike. Si no, muestra recientes.
   const query = (q ?? "").trim().toLowerCase();
+
+  // me + results en paralelo — collector_card_base64 excluido (varios MB innecesarios)
   let resultsQuery = supabase
     .from("profiles")
-    .select("id, username, display_name, city, country, avatar_url, collector_card_base64")
+    .select("id, username, display_name, city, country, avatar_url")
     .eq("is_public_profile", true)
     .neq("id", user.id)
     .order("created_at", { ascending: false })
@@ -35,9 +30,12 @@ export default async function AmigosPage({
   if (query.length > 0) {
     resultsQuery = resultsQuery.ilike("username", `${query}%`);
   }
-  const { data: results } = await resultsQuery;
 
-  // Progreso de cada amigo en un solo viaje a DB
+  const [{ data: me }, { data: results }] = await Promise.all([
+    supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
+    resultsQuery,
+  ]);
+
   const progressMap = await getProgressForUsers(
     (results ?? []).map((p) => p.id),
   );
@@ -90,9 +88,7 @@ export default async function AmigosPage({
       <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {results?.map((p) => {
           const name = p.display_name || `@${p.username}`;
-          const cardSrc = p.collector_card_base64
-            ? `data:image/jpeg;base64,${p.collector_card_base64}`
-            : p.avatar_url;
+          const cardSrc = p.avatar_url ?? null;
           const initials = name
             .split(/\s+/)
             .slice(0, 2)

@@ -168,23 +168,19 @@ export async function getProgressForUsers(userIds: string[]) {
     .eq("album_id", album.id);
   const total = totalCount ?? 0;
 
-  // N consultas paralelas con head:true — Supabase responde solo el count,
-  // sin payload. Mucho más rápido y robusto que .in() con range.
-  const counts = await Promise.all(
-    userIds.map(async (uid) => {
-      const { count } = await supabase
-        .from("user_stickers")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", uid)
-        .gt("quantity", 0);
-      return [uid, count ?? 0] as const;
-    }),
-  );
-
-  counts.forEach(([uid, owned]) => {
-    const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
-    result.set(uid, { owned, total, percent });
+  // Una sola query con GROUP BY vía RPC — reemplaza N round-trips paralelos
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: ownedData } = await (supabase as any).rpc("get_owned_counts", {
+    p_user_ids: userIds,
   });
+
+  ((ownedData ?? []) as { user_id: string; owned_count: number }[]).forEach(
+    ({ user_id, owned_count }) => {
+      const owned = Number(owned_count);
+      const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+      result.set(user_id, { owned, total, percent });
+    },
+  );
   return result;
 }
 
