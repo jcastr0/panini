@@ -71,12 +71,13 @@ export async function getStickersByGroup(albumId: string, groupCode: string) {
 /** Cromos de una sección especial (apertura/historia/coca-cola) */
 export async function getStickersBySection(
   albumId: string,
-  sectionKey: "apertura" | "historia" | "coca-cola",
+  sectionKey: "apertura" | "historia" | "legends" | "coca-cola",
 ) {
   const supabase = await createClient();
   const ranges = {
     apertura: { gte: 0, lt: 100 },
     historia: { gte: 100, lt: 110 },
+    legends: { gte: 100, lt: 102 },
     "coca-cola": { gte: 110, lt: 120 },
   };
   const r = ranges[sectionKey];

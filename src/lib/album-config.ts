@@ -30,7 +30,7 @@ export const GROUP_PALETTES: Record<
   L: { accent: "oklch(0.50 0.18 15)",  tint: "oklch(0.975 0.030 20)",  tag: "Three Lions"     },
 };
 
-export type SpecialKey = "apertura" | "historia" | "coca-cola";
+export type SpecialKey = "apertura" | "historia" | "coca-cola" | "legends";
 
 export const SPECIAL_SECTIONS: Record<
   SpecialKey,
@@ -38,6 +38,7 @@ export const SPECIAL_SECTIONS: Record<
 > = {
   apertura:    { accent: "var(--pitch)",      tint: "oklch(0.96 0.02 90)",  label: "Apertura",    emoji: "🎉" },
   historia:    { accent: "var(--gold)",       tint: "oklch(0.96 0.05 85)",  label: "Historia",    emoji: "🏆" },
+  legends:     { accent: "var(--gold)",       tint: "oklch(0.97 0.06 88)",  label: "Legends",     emoji: "⭐" },
   "coca-cola": { accent: "var(--panini-red)", tint: "oklch(0.96 0.04 25)",  label: "Coca-Cola",   emoji: "⭐" },
 };
 
@@ -217,12 +218,14 @@ export const TEAM_PALETTES: Record<string, { accent: string; tint: string }> = {
   "Panamá":     { accent: "oklch(0.45 0.20 250)", tint: "oklch(0.975 0.020 250)" }, // azul
 };
 
-/** Devuelve la "section key" para una sticker según group_code/page */
+/** Devuelve la "section key" para una sticker según group_code/page/type */
 export function sectionKey(
   groupCode: string | null,
   page: number | null,
+  type?: string | null,
 ): GroupCode | SpecialKey | "other" {
   if (groupCode) return groupCode.toUpperCase() as GroupCode;
+  if (type === "legend") return "legends";
   const p = page ?? 0;
   if (p < 100) return "apertura";
   if (p < 110) return "historia";
@@ -230,17 +233,19 @@ export function sectionKey(
   return "other";
 }
 
-/** Orden de las 15 secciones para el índice */
+/** Orden de las 16 secciones para el índice */
 export const SECTION_ORDER: Array<GroupCode | SpecialKey> = [
   "apertura",
   ...GROUP_CODES,
   "historia",
+  "legends",
   "coca-cola",
 ];
 
 export function sectionHref(key: GroupCode | SpecialKey): string {
   if (key === "apertura") return "/album/apertura";
   if (key === "historia") return "/album/historia";
+  if (key === "legends") return "/album/legends";
   if (key === "coca-cola") return "/album/coca-cola";
   return `/album/grupo/${key.toLowerCase()}`;
 }

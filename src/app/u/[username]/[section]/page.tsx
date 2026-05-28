@@ -10,6 +10,7 @@ import type { SectionSticker } from "@/app/(app)/album/_components/team-block";
 const VALID_SECTIONS = new Set<SpecialKey>([
   "apertura",
   "historia",
+  "legends",
   "coca-cola",
 ]);
 
@@ -25,6 +26,10 @@ const PAGE_TITLES: Record<SpecialKey, Record<number, string>> = {
     107: "Campeones 1962-1974",
     108: "Campeones 1986-1994",
     109: "Campeones 2002-2022",
+  },
+  legends: {
+    100: "Legends · primera mitad",
+    101: "Legends · segunda mitad",
   },
   "coca-cola": {
     110: "Coca-Cola · primera mitad",

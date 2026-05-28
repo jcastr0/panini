@@ -1,10 +1,11 @@
 import { cn } from "@/lib/utils";
 import { StickerCard } from "./sticker-card";
 import type { SectionSticker } from "./team-block";
+import type { SpecialKey } from "@/lib/album-config";
 
 /**
  * Render de páginas tipo "panel" para secciones sin equipos
- * (Apertura, Historia, Coca-Cola).
+ * (Apertura, Historia, Legends, Coca-Cola).
  *
  * Caso especial: la página "El Trofeo" (page=1 en apertura) tiene
  * únicamente dos cromos — Trofeo Superior y Trofeo Inferior — y la
@@ -23,7 +24,7 @@ export function SpecialSection({
   /** Vista del álbum de otro usuario — sin controles +/-. */
   readOnly?: boolean;
   /** Sección actual — controla layouts especiales (ej. historia all-horizontal). */
-  sectionKey?: "apertura" | "historia" | "coca-cola";
+  sectionKey?: SpecialKey;
 }) {
   const isHistoria = sectionKey === "historia";
   return (
