@@ -70,10 +70,11 @@ export function SpecialSection({
                 // Cromos horizontales por diseño:
                 //   - Apertura #0 (Panini chilena) y #3 (Mascotas): col-span-2 + tall
                 //   - Historia (page 99): todas son team photos → tall en su grid-cols-1
-                //   - Legends: NUNCA horizontales (todas son verticales 3:4)
+                //   - Legends y Coca-Cola: NUNCA horizontales (todas son verticales 3:4)
                 // Sus archivos JPG están ya rotados a horizontal (560×420).
+                const isApertura = sectionKey === "apertura";
                 const isHorizontalApertura =
-                  !isTrofeo && !isHistoria && !isLegends && (s.number === 0 || s.number === 3);
+                  isApertura && !isTrofeo && (s.number === 0 || s.number === 3);
                 const horizontal = (isHorizontalApertura || isHistoria) && !isLegends;
                 return (
                   <div
