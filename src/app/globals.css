@@ -269,6 +269,12 @@
   color: var(--muted-foreground);
 }
 
+/* ── Skeleton shimmer ──────────────────────────────────────────────────── */
+@keyframes panini-shimmer {
+  0%   { background-position: -250% center; }
+  100% { background-position: 250% center; }
+}
+
 /* Pitch line — sport divider */
 .pitch-line {
   height: 6px;
