@@ -14,20 +14,20 @@ import {
 } from "@/lib/album-config";
 
 const SPECIAL_ICONS: Record<SpecialKey, React.ReactNode> = {
-  /* logo mark portrait 412×636 → h fija, w auto */
-  apertura:    <Fwc2026Icon className="h-16 w-auto" />,
-  /* emblema cuadrado 1320×1320 → size cuadrado */
-  historia:    <Fwc2026EmblemIcon className="size-16" />,
+  /* portrait 412×636 → subimos la h para que se vea más grande en el tile */
+  apertura:    <Fwc2026Icon className="h-24 w-auto" />,
+  /* cuadrado 1320×1320 */
+  historia:    <Fwc2026EmblemIcon className="size-20" />,
   legends: (
     <span className="flex flex-col items-center gap-1">
-      <Fwc2026EmblemIcon className="size-12" />
+      <Fwc2026EmblemIcon className="size-16" />
       <span className="font-display font-black text-[10px] tracking-[0.22em] uppercase">
         Legends
       </span>
     </span>
   ),
-  /* wordmark horizontal → h pequeña, w auto, max-width para no desbordarse */
-  "coca-cola": <CocaColaIcon className="h-6 w-auto max-w-[5.5rem]" />,
+  /* wordmark muy ancho → h moderada + max-w para no desbordar */
+  "coca-cola": <CocaColaIcon className="h-8 w-auto max-w-[6.5rem]" />,
 };
 
 type SectionKey = GroupCode | SpecialKey;

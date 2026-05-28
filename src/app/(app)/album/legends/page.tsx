@@ -48,7 +48,7 @@ export default async function LegendsPage() {
       sectionKey="legends"
       badge="Sección · Legends"
       letter={
-        <span className="flex flex-col items-center gap-2">
+        <span className="inline-flex flex-col items-start gap-2">
           <Fwc2026EmblemIcon className="h-[clamp(4rem,16vw,9rem)] w-auto" />
           <span
             className="font-display font-black tracking-[0.28em] uppercase leading-none"

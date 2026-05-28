@@ -14,7 +14,7 @@ const SECTION_ICONS: Record<SpecialKey, React.ReactNode> = {
   apertura:    <Fwc2026Icon className="h-[clamp(3.5rem,12vw,7rem)] w-auto" />,
   historia:    <Fwc2026EmblemIcon className="h-[clamp(3.5rem,12vw,7rem)] w-auto" />,
   legends: (
-    <span className="flex flex-col items-center gap-1.5">
+    <span className="inline-flex flex-col items-start gap-1.5">
       <Fwc2026EmblemIcon className="h-[clamp(2.5rem,9vw,5.5rem)] w-auto" />
       <span
         className="font-display font-black tracking-[0.28em] uppercase leading-none"
