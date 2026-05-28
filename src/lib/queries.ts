@@ -168,19 +168,44 @@ export async function getProgressForUsers(userIds: string[]) {
     .eq("album_id", album.id);
   const total = totalCount ?? 0;
 
-  // Una sola query con GROUP BY vía RPC — reemplaza N round-trips paralelos
+  // Intento 1: RPC con GROUP BY (1 round-trip). Si la función no existe aún
+  // en la DB, caemos al método legacy de N COUNT paralelos.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: ownedData } = await (supabase as any).rpc("get_owned_counts", {
-    p_user_ids: userIds,
-  });
-
-  ((ownedData ?? []) as { user_id: string; owned_count: number }[]).forEach(
-    ({ user_id, owned_count }) => {
-      const owned = Number(owned_count);
-      const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
-      result.set(user_id, { owned, total, percent });
-    },
+  const { data: ownedData, error: rpcError } = await (supabase as any).rpc(
+    "get_owned_counts",
+    { p_user_ids: userIds },
   );
+
+  if (!rpcError && ownedData) {
+    (ownedData as { user_id: string; owned_count: number }[]).forEach(
+      ({ user_id, owned_count }) => {
+        const owned = Number(owned_count);
+        const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+        result.set(user_id, { owned, total, percent });
+      },
+    );
+    // Asegura que todos los userIds tengan entrada (los que no tienen cromos no aparecen en GROUP BY)
+    userIds.forEach((uid) => {
+      if (!result.has(uid)) result.set(uid, { owned: 0, total, percent: 0 });
+    });
+    return result;
+  }
+
+  // Fallback legacy — N head:true counts en paralelo
+  const counts = await Promise.all(
+    userIds.map(async (uid) => {
+      const { count } = await supabase
+        .from("user_stickers")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .gt("quantity", 0);
+      return [uid, count ?? 0] as const;
+    }),
+  );
+  counts.forEach(([uid, owned]) => {
+    const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+    result.set(uid, { owned, total, percent });
+  });
   return result;
 }
 
