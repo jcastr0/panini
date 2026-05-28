@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { sectionKey } from "@/lib/album-config";
 
 export async function getActiveAlbum() {
   const supabase = await createClient();
@@ -165,7 +166,7 @@ export async function getAllSectionStats(userId: string, albumId: string) {
   const [{ data: stickers }, { data: owned }] = await Promise.all([
     supabase
       .from("stickers")
-      .select("id, group_code, page")
+      .select("id, group_code, page, type")
       .eq("album_id", albumId),
     supabase
       .from("user_stickers")
@@ -178,16 +179,8 @@ export async function getAllSectionStats(userId: string, albumId: string) {
   const stats = new Map<string, { total: number; owned: number }>();
 
   (stickers ?? []).forEach((s) => {
-    let key: string;
-    if (s.group_code) {
-      key = s.group_code.toUpperCase();
-    } else {
-      const p = s.page ?? 0;
-      if (p < 100) key = "apertura";
-      else if (p < 110) key = "historia";
-      else if (p < 120) key = "coca-cola";
-      else key = "other";
-    }
+    const key = sectionKey(s.group_code, s.page, s.type);
+    if (key === "other") return;
     const entry = stats.get(key) ?? { total: 0, owned: 0 };
     entry.total += 1;
     if (ownedSet.has(s.id)) entry.owned += 1;
