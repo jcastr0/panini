@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getProgressForUsers } from "@/lib/queries";
 import { ShareCard } from "../_components/share-card";
+import { FriendAvatar } from "./_components/friend-avatar";
 
 export default async function AmigosPage({
   searchParams,
@@ -88,7 +89,6 @@ export default async function AmigosPage({
       <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {results?.map((p) => {
           const name = p.display_name || `@${p.username}`;
-          const cardSrc = p.avatar_url ?? null;
           const initials = name
             .split(/\s+/)
             .slice(0, 2)
@@ -102,18 +102,11 @@ export default async function AmigosPage({
                 className="block border rounded-xl bg-card p-4 hover:border-[var(--panini-blue)]/40 transition-colors group space-y-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="size-12 rounded-full overflow-hidden bg-muted grid place-items-center text-sm font-semibold ring-1 ring-border">
-                    {cardSrc ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={cardSrc}
-                        alt=""
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <span>{initials || "?"}</span>
-                    )}
-                  </div>
+                  <FriendAvatar
+                    username={p.username}
+                    avatarUrl={p.avatar_url ?? null}
+                    initials={initials}
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="font-display font-semibold truncate group-hover:text-[var(--panini-blue)] transition-colors">
                       {name}
