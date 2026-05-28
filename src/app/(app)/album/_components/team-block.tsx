@@ -181,28 +181,18 @@ function TeamHeaderCell({
       className="h-full rounded-lg bg-card border-2 p-3 sm:p-4 flex flex-col justify-between gap-2 shadow-sm overflow-hidden relative"
       style={{ borderColor: accent }}
     >
-      {/* Fila superior: bandera + balón + código país protagonista */}
+      {/* Fila superior: escudo + código país protagonista */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span
-            className={`fi fi-${info.iso} rounded-sm shadow-md ring-1 ring-black/10`}
-            style={{
-              width: "clamp(2.25rem, 7vw, 3.5rem)",
-              height: "clamp(1.6875rem, 5.25vw, 2.625rem)",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-            aria-label={`Bandera de ${info.name}`}
-          />
-          <span
-            className="leading-none select-none"
-            style={{ fontSize: "clamp(1.1rem, 3.2vw, 1.6rem)" }}
-            aria-hidden
-          >
-            ⚽
-          </span>
-        </div>
-        {/* Código FIFA de 3 letras — protagonista (así buscamos los cromos) */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/laminas/${info.paniniCode}/${info.paniniCode.toLowerCase()}1.jpg`}
+          alt={`Escudo de ${info.name}`}
+          className="rounded-md shadow-md ring-1 ring-black/10 shrink-0 object-cover"
+          style={{
+            width: "clamp(2.75rem, 8.5vw, 4rem)",
+            aspectRatio: "3 / 4",
+          }}
+        />
         <span
           className="font-mono font-black leading-none tabular tracking-tight"
           style={{
@@ -232,9 +222,21 @@ function TeamHeaderCell({
       </div>
 
       <div className="space-y-1">
-        <p className="text-[10px] sm:text-xs font-medium text-foreground/85 leading-snug">
-          {info.federationName}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`fi fi-${info.iso} rounded-[2px] ring-1 ring-black/10 shrink-0`}
+            style={{
+              width: "1.25rem",
+              height: "0.9375rem",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+            aria-label={`Bandera de ${info.name}`}
+          />
+          <p className="text-[10px] sm:text-xs font-medium text-foreground/85 leading-snug">
+            {info.federationName}
+          </p>
+        </div>
         <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
           {info.confederation}
         </span>
