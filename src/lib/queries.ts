@@ -68,26 +68,29 @@ export async function getStickersByGroup(albumId: string, groupCode: string) {
   return stickers ?? [];
 }
 
-/** Cromos de una sección especial (apertura/historia/coca-cola) */
+/** Cromos de una sección especial (apertura/historia/legends/coca-cola) */
 export async function getStickersBySection(
   albumId: string,
   sectionKey: "apertura" | "historia" | "legends" | "coca-cola",
 ) {
   const supabase = await createClient();
-  const ranges = {
-    apertura: { gte: 0, lt: 100 },
-    historia: { gte: 100, lt: 110 },
-    legends: { gte: 100, lt: 102 },
-    "coca-cola": { gte: 110, lt: 120 },
+  type Filter = { pageGte: number; pageLt: number; type: "legend" | null };
+  const filters: Record<typeof sectionKey, Filter> = {
+    apertura:    { pageGte: 0,   pageLt: 100, type: null },
+    historia:    { pageGte: 106, pageLt: 110, type: null },
+    legends:     { pageGte: 100, pageLt: 102, type: "legend" },
+    "coca-cola": { pageGte: 110, pageLt: 120, type: null },
   };
-  const r = ranges[sectionKey];
-  const { data: stickers } = await supabase
+  const f = filters[sectionKey];
+  let q = supabase
     .from("stickers")
     .select("id, code, number, name, team, group_code, type, page")
     .eq("album_id", albumId)
     .is("group_code", null)
-    .gte("page", r.gte)
-    .lt("page", r.lt)
+    .gte("page", f.pageGte)
+    .lt("page", f.pageLt);
+  if (f.type) q = q.eq("type", f.type);
+  const { data: stickers } = await q
     .order("page", { ascending: true })
     .order("number", { ascending: true });
   return stickers ?? [];
