@@ -166,10 +166,12 @@ export function StickerCard({
             ? "rounded-b rounded-t-none"
             : "rounded",
         horizontal
-          ? "h-10 sm:h-32"
-          : stickerImage && !imgFailed
-            ? "h-32"
-            : "h-14",
+          ? "h-16 sm:h-32"
+          : isTrofeoTop || isTrofeoBottom
+            ? "h-44 sm:h-48"
+            : stickerImage && !imgFailed
+              ? "h-32"
+              : "h-14",
         owned
           ? "bg-[color-mix(in_oklab,var(--card),var(--accent-section,var(--pitch))_22%)] ring-1 ring-[color-mix(in_oklab,var(--accent-section,var(--pitch))_30%,transparent)]"
           : "bg-[color-mix(in_oklab,var(--muted-foreground),transparent_85%)]",

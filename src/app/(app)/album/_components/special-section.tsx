@@ -55,26 +55,41 @@ export function SpecialSection({
                   : "grid-cols-2 sm:grid-cols-3 gap-3",
               )}
             >
-              {list.map((s) => (
-                <StickerCard
-                  key={s.id}
-                  id={s.id}
-                  code={s.code}
-                  number={s.number}
-                  name={s.name}
-                  team={s.team}
-                  type={s.type}
-                  initialQuantity={qtyMap.get(s.id) ?? 0}
-                  trofeoHalf={
-                    isTrofeo
-                      ? s.number === 1
-                        ? "top"
-                        : "bottom"
-                      : undefined
-                  }
-                  readOnly={readOnly}
-                />
-              ))}
+              {list.map((s) => {
+                // Cromos horizontales por diseño (ocupan 2 columnas):
+                //   - Apertura #0 (Panini chilena)
+                //   - Apertura #3 (Mascotas Maple/Zayu/Clutch)
+                // Sus archivos JPG están ya rotados a horizontal (560×420).
+                const isHorizontalApertura =
+                  !isTrofeo && (s.number === 0 || s.number === 3);
+                return (
+                  <div
+                    key={s.id}
+                    className={cn(
+                      isHorizontalApertura && "col-span-2 sm:col-span-2",
+                    )}
+                  >
+                    <StickerCard
+                      id={s.id}
+                      code={s.code}
+                      number={s.number}
+                      name={s.name}
+                      team={s.team}
+                      type={s.type}
+                      initialQuantity={qtyMap.get(s.id) ?? 0}
+                      horizontal={isHorizontalApertura}
+                      trofeoHalf={
+                        isTrofeo
+                          ? s.number === 1
+                            ? "top"
+                            : "bottom"
+                          : undefined
+                      }
+                      readOnly={readOnly}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
