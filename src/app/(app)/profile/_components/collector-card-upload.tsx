@@ -60,7 +60,7 @@ export function CollectorCardUpload({
       // 1. Sube directo a Vercel Blob (bypassea el límite 1MB de Server Actions)
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const blob = await upload(`${Date.now()}.${ext}`, file, {
-        access: "public",
+        access: "private",
         handleUploadUrl: "/api/blob/upload",
       });
 

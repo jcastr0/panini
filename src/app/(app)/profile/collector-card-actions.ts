@@ -2,7 +2,7 @@
 
 import sharp from "sharp";
 import { revalidatePath } from "next/cache";
-import { del } from "@vercel/blob";
+import { del, get } from "@vercel/blob";
 import { createClient } from "@/lib/supabase/server";
 
 const TARGET_BYTES = 300 * 1024; // 300 KB base64 final
@@ -44,13 +44,17 @@ export async function processCollectorCardFromBlob(
 
   let buffer: Buffer;
   try {
-    const res = await fetch(blobUrl, { cache: "no-store" });
-    if (!res.ok) {
-      return { error: `No se pudo descargar el blob (${res.status})` };
+    // Blob privado: el SDK descarga usando BLOB_READ_WRITE_TOKEN del server
+    // (la URL no es accesible públicamente).
+    const result = await get(blobUrl, { access: "private" });
+    if (!result) {
+      return { error: "Blob no encontrado" };
     }
-    buffer = Buffer.from(await res.arrayBuffer());
-  } catch {
-    return { error: "Error al descargar el blob temporal" };
+    const response = new Response(result.stream);
+    buffer = Buffer.from(await response.arrayBuffer());
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Error al descargar el blob";
+    return { error: `Error al descargar el blob: ${msg}` };
   }
 
   // Comprimir con loop adaptativo de calidad hasta caber en TARGET_BYTES base64
