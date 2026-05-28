@@ -62,7 +62,8 @@ export default async function PublicSpecialSectionPage({
     supabase
       .from("user_stickers")
       .select("sticker_id, quantity")
-      .eq("user_id", profile.id),
+      .eq("user_id", profile.id)
+      .range(0, 9999),
   ]);
 
   const qtyMap = new Map<string, number>();

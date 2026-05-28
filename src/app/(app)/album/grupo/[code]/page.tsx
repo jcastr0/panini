@@ -50,7 +50,8 @@ export default async function GroupPage({
     supabase
       .from("user_stickers")
       .select("sticker_id, quantity, display_variant")
-      .eq("user_id", user.id),
+      .eq("user_id", user.id)
+      .range(0, 9999),
     getCollectorCard(user.id),
   ]);
 

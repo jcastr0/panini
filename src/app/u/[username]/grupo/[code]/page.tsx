@@ -50,7 +50,8 @@ export default async function PublicGroupPage({
     supabase
       .from("user_stickers")
       .select("sticker_id, quantity, display_variant")
-      .eq("user_id", profile.id),
+      .eq("user_id", profile.id)
+      .range(0, 9999),
   ]);
 
   const qtyMap = new Map<string, number>();

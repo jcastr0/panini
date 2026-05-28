@@ -20,17 +20,22 @@ export async function getUserStats(userId: string) {
     return { total: 0, owned: 0, missing: 0, duplicates: 0, percent: 0 };
   }
 
-  const { data: stickers } = await supabase
+  // Total via head:true count — Supabase REST trunca .select() a 1000
+  // filas por default. El álbum ya pasó de 1000 con las legends.
+  const { count: totalCount } = await supabase
     .from("stickers")
-    .select("id")
+    .select("*", { count: "exact", head: true })
     .eq("album_id", album.id);
-  const total = stickers?.length ?? 0;
+  const total = totalCount ?? 0;
 
+  // user_stickers necesita la quantity por fila (para duplicates),
+  // así que pedimos las filas con .range() amplio para evitar el cap.
   const { data: rows } = await supabase
     .from("user_stickers")
     .select("sticker_id, quantity")
     .eq("user_id", userId)
-    .gt("quantity", 0);
+    .gt("quantity", 0)
+    .range(0, 9999);
 
   const owned = rows?.length ?? 0;
   const duplicates =
@@ -125,11 +130,12 @@ export async function getProgressForUsers(userIds: string[]) {
   const album = await getActiveAlbum();
   if (!album) return result;
 
-  const { data: stickers } = await supabase
+  // Total via head:true count — evita el cap de 1000 filas del .select()
+  const { count: totalCount } = await supabase
     .from("stickers")
-    .select("id")
+    .select("*", { count: "exact", head: true })
     .eq("album_id", album.id);
-  const total = stickers?.length ?? 0;
+  const total = totalCount ?? 0;
 
   // N consultas paralelas con head:true — Supabase responde solo el count,
   // sin payload. Mucho más rápido y robusto que .in() con range.
@@ -168,19 +174,24 @@ export async function getLastActivity(userId: string): Promise<Date | null> {
   return data?.updated_at ? new Date(data.updated_at) : null;
 }
 
-/** Stats por sección del álbum (1 viaje a DB) */
+/** Stats por sección del álbum (1 viaje a DB).
+ *  Usa .range(0, 9999) para evitar la truncación a 1000 filas del API
+ *  REST de Supabase. El álbum tiene 1021 stickers (994 + 27 legends)
+ *  y un usuario completo posee >1000 rows en user_stickers. */
 export async function getAllSectionStats(userId: string, albumId: string) {
   const supabase = await createClient();
   const [{ data: stickers }, { data: owned }] = await Promise.all([
     supabase
       .from("stickers")
       .select("id, group_code, page, type")
-      .eq("album_id", albumId),
+      .eq("album_id", albumId)
+      .range(0, 9999),
     supabase
       .from("user_stickers")
       .select("sticker_id, quantity")
       .eq("user_id", userId)
-      .gt("quantity", 0),
+      .gt("quantity", 0)
+      .range(0, 9999),
   ]);
 
   const ownedSet = new Set((owned ?? []).map((r) => r.sticker_id));

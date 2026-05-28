@@ -39,15 +39,18 @@ export default async function NewTradeWithUser({
         .from("stickers")
         .select("id, number, name, team, group_code, type")
         .eq("album_id", album.id)
-        .order("number", { ascending: true }),
+        .order("number", { ascending: true })
+        .range(0, 9999),
       supabase
         .from("user_stickers")
         .select("sticker_id, quantity")
-        .eq("user_id", user.id),
+        .eq("user_id", user.id)
+        .range(0, 9999),
       supabase
         .from("user_stickers")
         .select("sticker_id, quantity")
-        .eq("user_id", otherId),
+        .eq("user_id", otherId)
+        .range(0, 9999),
     ]);
 
   if (!other) notFound();

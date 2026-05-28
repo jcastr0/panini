@@ -29,11 +29,13 @@ export default async function CollectionPage() {
         .select("id, code, number, name, team, group_code, type, page")
         .eq("album_id", album.id)
         .order("page", { ascending: true })
-        .order("number", { ascending: true }),
+        .order("number", { ascending: true })
+        .range(0, 9999),
       supabase
         .from("user_stickers")
         .select("sticker_id, quantity")
-        .eq("user_id", user.id),
+        .eq("user_id", user.id)
+        .range(0, 9999),
       getUserStats(user.id),
       getCollectorCard(user.id),
     ],
