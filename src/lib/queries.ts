@@ -93,8 +93,12 @@ export async function getStickersBySection(
 }
 
 /**
- * Porcentaje de avance para varios usuarios a la vez (1 query agregado).
- * Útil para listar amigos con su progreso sin N round-trips a DB.
+ * Porcentaje de avance para varios usuarios a la vez.
+ * Usa N HEAD requests con count:exact en paralelo (uno por amigo) —
+ * cada uno solo devuelve el número, sin transferir filas. Evita la
+ * truncación a 1000 filas que tiene la API REST de Supabase cuando
+ * se usa .in() sobre user_stickers (que tendría 48 × ~500 = 24k filas).
+ *
  * Devuelve Map<user_id, { owned, total, percent }>.
  */
 export async function getProgressForUsers(userIds: string[]) {
@@ -114,19 +118,20 @@ export async function getProgressForUsers(userIds: string[]) {
     .eq("album_id", album.id);
   const total = stickers?.length ?? 0;
 
-  const { data: rows } = await supabase
-    .from("user_stickers")
-    .select("user_id, sticker_id")
-    .in("user_id", userIds)
-    .gt("quantity", 0);
+  // N consultas paralelas con head:true — Supabase responde solo el count,
+  // sin payload. Mucho más rápido y robusto que .in() con range.
+  const counts = await Promise.all(
+    userIds.map(async (uid) => {
+      const { count } = await supabase
+        .from("user_stickers")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", uid)
+        .gt("quantity", 0);
+      return [uid, count ?? 0] as const;
+    }),
+  );
 
-  const counts = new Map<string, number>();
-  (rows ?? []).forEach((r) => {
-    counts.set(r.user_id, (counts.get(r.user_id) ?? 0) + 1);
-  });
-
-  userIds.forEach((uid) => {
-    const owned = counts.get(uid) ?? 0;
+  counts.forEach(([uid, owned]) => {
     const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
     result.set(uid, { owned, total, percent });
   });
