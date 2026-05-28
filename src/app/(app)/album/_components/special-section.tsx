@@ -28,12 +28,14 @@ export function SpecialSection({
 }) {
   const isHistoria = sectionKey === "historia";
   return (
+    // pages.map loop renders below
     <div className="grid lg:grid-cols-2 gap-6">
       {pages.map(([page, list]) => {
         const ownedInPage = list.filter(
           (s) => (qtyMap.get(s.id) ?? 0) >= 1,
         ).length;
         const isTrofeo = list.length === 2 && list.every((s) => s.number === 1 || s.number === 2);
+        const isLegends = sectionKey === "legends";
         return (
           <div
             key={page}
@@ -59,17 +61,20 @@ export function SpecialSection({
                   ? "grid-cols-1 max-w-[220px] mx-auto gap-0"
                   : isHistoria
                     ? "grid-cols-1 gap-3"
-                    : "grid-cols-2 sm:grid-cols-3 gap-3",
+                    : isLegends
+                      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+                      : "grid-cols-2 sm:grid-cols-3 gap-3",
               )}
             >
               {list.map((s) => {
                 // Cromos horizontales por diseño:
                 //   - Apertura #0 (Panini chilena) y #3 (Mascotas): col-span-2 + tall
                 //   - Historia (page 99): todas son team photos → tall en su grid-cols-1
+                //   - Legends: NUNCA horizontales (todas son verticales 3:4)
                 // Sus archivos JPG están ya rotados a horizontal (560×420).
                 const isHorizontalApertura =
-                  !isTrofeo && !isHistoria && (s.number === 0 || s.number === 3);
-                const horizontal = isHorizontalApertura || isHistoria;
+                  !isTrofeo && !isHistoria && !isLegends && (s.number === 0 || s.number === 3);
+                const horizontal = (isHorizontalApertura || isHistoria) && !isLegends;
                 return (
                   <div
                     key={s.id}
