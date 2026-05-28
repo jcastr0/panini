@@ -196,7 +196,13 @@ export function StickerCard({
               src={stickerImage}
               alt={displayName}
               draggable={false}
-              className="size-full object-cover pointer-events-none"
+              className={cn(
+                "size-full object-cover pointer-events-none",
+                // En la mitad inferior del trofeo, alinear la imagen al
+                // borde inferior para que la base conecte sin franja blanca.
+                isTrofeoBottom && "object-bottom",
+                isTrofeoTop && "object-top",
+              )}
               onError={() => setImgFailed(true)}
             />
           </button>
