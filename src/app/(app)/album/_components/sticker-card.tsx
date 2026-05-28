@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { StickerLightbox } from "./sticker-lightbox";
 import { setStickerQuantity } from "../actions";
 
 type Props = {
@@ -168,13 +169,31 @@ export function StickerCard({
       )}
     >
       {stickerImage && !imgFailed ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <StickerLightbox
           src={stickerImage}
           alt={displayName}
-          className="size-full object-cover"
-          onError={() => setImgFailed(true)}
-        />
+          code={code}
+          number={number}
+          name={name}
+          team={team}
+          shiny={shiny}
+          horizontal={horizontal}
+        >
+          <button
+            type="button"
+            aria-label={`Ver ${displayName} en grande`}
+            className="block size-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)] focus-visible:ring-offset-1 rounded cursor-zoom-in"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={stickerImage}
+              alt={displayName}
+              draggable={false}
+              className="size-full object-cover pointer-events-none"
+              onError={() => setImgFailed(true)}
+            />
+          </button>
+        </StickerLightbox>
       ) : (
         <span
           className={cn(
