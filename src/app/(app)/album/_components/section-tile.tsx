@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Sparkles, Trophy, Crown, Star } from "lucide-react";
 import {
   GROUP_TEAMS,
   SPECIAL_SECTIONS,
@@ -9,6 +9,13 @@ import {
   type GroupCode,
   type SpecialKey,
 } from "@/lib/album-config";
+
+const SPECIAL_ICONS: Record<SpecialKey, React.ReactNode> = {
+  apertura:    <Sparkles className="size-12" />,
+  historia:    <Trophy   className="size-12" />,
+  legends:     <Crown    className="size-12" />,
+  "coca-cola": <Star     className="size-12" />,
+};
 
 type SectionKey = GroupCode | SpecialKey;
 
@@ -75,8 +82,8 @@ export function SectionTile({
               {sectionKey}
             </span>
           ) : (
-            <span className="text-5xl" aria-hidden>
-              {special?.emoji}
+            <span style={{ color: accent }} aria-hidden>
+              {special && SPECIAL_ICONS[sectionKey as SpecialKey]}
             </span>
           )}
         </div>

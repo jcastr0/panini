@@ -24,6 +24,29 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Fan de legends */}
+      <div className="relative h-52 flex justify-center items-end overflow-visible">
+        {FEATURED_LEGENDS.map(({ code, alt, rotate, offset }, i) => (
+          <div
+            key={code}
+            className="absolute w-[108px] aspect-[3/4] rounded-xl overflow-hidden shadow-2xl ring-2 ring-white/70 transition-transform duration-200 hover:scale-110 hover:z-10"
+            style={{
+              transform: `rotate(${rotate})`,
+              left: `calc(50% + ${offset}px - 54px)`,
+              bottom: 0,
+              zIndex: i === 1 ? 3 : i + 1,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/laminas/LEG/${code}.jpg`}
+              alt={alt}
+              className="size-full object-cover"
+            />
+          </div>
+        ))}
+      </div>
+
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
           Hola, ¡bienvenido a tu álbum!
@@ -82,6 +105,12 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
+const FEATURED_LEGENDS: { code: string; alt: string; rotate: string; offset: number }[] = [
+  { code: "legarg17", alt: "Lionel Messi",     rotate: "-9deg", offset: -90 },
+  { code: "legcol20", alt: "Luis Díaz",         rotate:  "1deg", offset:   0 },
+  { code: "legpor15", alt: "Cristiano Ronaldo", rotate:  "9deg", offset:  90 },
+];
 
 function KPI({ label, value }: { label: string; value: number }) {
   return (
