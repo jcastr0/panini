@@ -1,4 +1,5 @@
 import { StickerCard } from "./sticker-card";
+import { LegendToggle } from "./legend-toggle";
 import type { TeamInfo } from "@/lib/album-config";
 
 export type SectionSticker = {
@@ -9,6 +10,12 @@ export type SectionSticker = {
   team: string | null;
   type: "normal" | "shiny" | "legend" | "special";
   page: number | null;
+  // Optional fields populated only in team views where a JOIN
+  // with the legends has happened. Default to absent/null.
+  legendStickerId?: string | null;
+  legendCode?: string | null;
+  displayVariant?: "normal" | "legend" | null;
+  hasLegend?: boolean;
 };
 
 export function TeamBlock({
@@ -22,6 +29,7 @@ export function TeamBlock({
   tint,
   accent,
   readOnly = false,
+  legendQtyMap,
 }: {
   teamName: string;
   teamFlag?: string;
@@ -38,6 +46,7 @@ export function TeamBlock({
   accent?: string;
   /** Vista del álbum de otro usuario — sin controles +/-. */
   readOnly?: boolean;
+  legendQtyMap?: Map<string, number>;
 }) {
   const pagesMap = new Map<number, SectionSticker[]>();
   list.forEach((s) => {
@@ -110,6 +119,7 @@ export function TeamBlock({
                   activeTeam={teamName}
                   accent={accent}
                   readOnly={readOnly}
+                  legendQtyMap={legendQtyMap}
                 />
               ) : (
                 <Page1Grid
@@ -118,6 +128,7 @@ export function TeamBlock({
                   teamInfo={isFirstPage ? teamInfo : undefined}
                   accent={accent}
                   readOnly={readOnly}
+                  legendQtyMap={legendQtyMap}
                 />
               )}
             </div>
@@ -134,6 +145,7 @@ function Page1Grid({
   teamInfo,
   accent,
   readOnly,
+  legendQtyMap,
 }: {
   stickers: SectionSticker[];
   qtyMap: Map<string, number>;
@@ -141,6 +153,7 @@ function Page1Grid({
   teamInfo?: TeamInfo;
   accent?: string;
   readOnly?: boolean;
+  legendQtyMap?: Map<string, number>;
 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
@@ -151,7 +164,7 @@ function Page1Grid({
       )}
       {stickers.map((s) => (
         <div key={s.id}>
-          <StickerCardSlot s={s} qtyMap={qtyMap} readOnly={readOnly} />
+          <StickerCardSlot s={s} qtyMap={qtyMap} readOnly={readOnly} legendQtyMap={legendQtyMap} />
         </div>
       ))}
     </div>
@@ -251,6 +264,7 @@ function Page2Grid({
   activeTeam,
   accent,
   readOnly,
+  legendQtyMap,
 }: {
   stickers: SectionSticker[];
   qtyMap: Map<string, number>;
@@ -259,6 +273,7 @@ function Page2Grid({
   activeTeam: string;
   accent?: string;
   readOnly?: boolean;
+  legendQtyMap?: Map<string, number>;
 }) {
   // Layout: "11 12 13H / 14 15 16 17 / [Grupo] 18 19 20"
   const teamPhotoIdx = stickers.findIndex((s) => s.number === 13);
@@ -283,6 +298,7 @@ function Page2Grid({
           qtyMap={qtyMap}
           horizontal={isTeamPhoto}
           readOnly={readOnly}
+          legendQtyMap={legendQtyMap}
         />
       </div>,
     );
@@ -299,24 +315,50 @@ function StickerCardSlot({
   qtyMap,
   horizontal,
   readOnly,
+  legendQtyMap,
 }: {
   s: SectionSticker;
   qtyMap: Map<string, number>;
   horizontal?: boolean;
   readOnly?: boolean;
+  legendQtyMap?: Map<string, number>;
 }) {
+  // Render rule defensiva: solo respeta variant='legend' SI user posee la legend
+  const effectiveVariant: "normal" | "legend" =
+    s.displayVariant === "legend" && s.hasLegend ? "legend" : "normal";
+  const showToggle =
+    !readOnly && Boolean(s.hasLegend) && Boolean(s.legendStickerId) && Boolean(s.legendCode);
+
+  const renderCode = effectiveVariant === "legend" ? s.legendCode! : s.code;
+  const renderId = effectiveVariant === "legend" ? s.legendStickerId! : s.id;
+  const renderQty =
+    effectiveVariant === "legend"
+      ? legendQtyMap?.get(s.legendStickerId!) ?? 0
+      : qtyMap.get(s.id) ?? 0;
+  const renderType: SectionSticker["type"] =
+    effectiveVariant === "legend" ? "legend" : s.type;
+
   return (
-    <StickerCard
-      id={s.id}
-      code={s.code}
-      number={s.number}
-      name={s.name}
-      team={s.team}
-      type={s.type}
-      initialQuantity={qtyMap.get(s.id) ?? 0}
-      horizontal={horizontal}
-      readOnly={readOnly}
-    />
+    <div className="relative">
+      {showToggle && (
+        <LegendToggle
+          slotId={s.id}
+          legendCode={s.legendCode!}
+          initialVariant={s.displayVariant ?? null}
+        />
+      )}
+      <StickerCard
+        id={renderId}
+        code={renderCode}
+        number={s.number}
+        name={s.name}
+        team={s.team}
+        type={renderType}
+        initialQuantity={renderQty}
+        horizontal={horizontal}
+        readOnly={readOnly}
+      />
+    </div>
   );
 }
 

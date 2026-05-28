@@ -49,21 +49,49 @@ export default async function PublicGroupPage({
     getStickersByGroup(album.id, code),
     supabase
       .from("user_stickers")
-      .select("sticker_id, quantity")
+      .select("sticker_id, quantity, display_variant")
       .eq("user_id", profile.id),
   ]);
 
   const qtyMap = new Map<string, number>();
-  (ownedRows ?? []).forEach((r) =>
-    qtyMap.set(r.sticker_id, r.quantity ?? 0),
-  );
+  const variantMap = new Map<string, "normal" | "legend" | null>();
+  (ownedRows ?? []).forEach((r) => {
+    qtyMap.set(r.sticker_id, r.quantity ?? 0);
+    variantMap.set(r.sticker_id, (r.display_variant as "normal" | "legend" | null) ?? null);
+  });
+
+  // Enriquecer cada sticker con info de su legend (si la tiene). El JOIN
+  // inverso devuelve `legend` como array (PostgREST embedded resource).
+  type StickerWithLegend = SectionSticker & {
+    legend?: Array<{ id: string; code: string }> | { id: string; code: string } | null;
+  };
+  const enriched: SectionSticker[] = (stickers as unknown as StickerWithLegend[]).map((s) => {
+    const legend = Array.isArray(s.legend) ? s.legend[0] ?? null : s.legend ?? null;
+    const legendId = legend?.id ?? null;
+    const { legend: _legend, ...rest } = s;
+    return {
+      ...rest,
+      legendStickerId: legendId,
+      legendCode: legend?.code ?? null,
+      hasLegend: legendId ? (qtyMap.get(legendId) ?? 0) >= 1 : false,
+      displayVariant: variantMap.get(s.id) ?? null,
+    };
+  });
+
+  // Map de qty para legends (renderQty cuando effectiveVariant='legend')
+  const legendQtyMap = new Map<string, number>();
+  enriched.forEach((s) => {
+    if (s.legendStickerId) {
+      legendQtyMap.set(s.legendStickerId, qtyMap.get(s.legendStickerId) ?? 0);
+    }
+  });
 
   const flags = GROUP_TEAMS[code];
   const byTeam = new Map<string, SectionSticker[]>();
-  stickers.forEach((s) => {
+  enriched.forEach((s) => {
     const key = s.team ?? "";
     if (!byTeam.has(key)) byTeam.set(key, []);
-    byTeam.get(key)!.push(s as SectionSticker);
+    byTeam.get(key)!.push(s);
   });
   const orderedTeams = flags
     .map((info) => ({ info, list: byTeam.get(info.name) ?? [] }))
@@ -78,8 +106,8 @@ export default async function PublicGroupPage({
   const palette =
     TEAM_PALETTES[currentTeam.info.name] ?? GROUP_PALETTES[code];
 
-  const groupTotal = stickers.length;
-  const groupOwned = stickers.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length;
+  const groupTotal = enriched.length;
+  const groupOwned = enriched.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length;
   const groupPercent =
     groupTotal > 0 ? Math.round((groupOwned / groupTotal) * 100) : 0;
 
@@ -223,6 +251,7 @@ export default async function PublicGroupPage({
         tint={palette.tint}
         accent={palette.accent}
         readOnly
+        legendQtyMap={legendQtyMap}
       />
 
       <p className="text-xs text-muted-foreground italic text-center">

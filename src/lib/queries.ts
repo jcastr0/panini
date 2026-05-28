@@ -56,12 +56,20 @@ export async function getCollectorCard(userId: string) {
   return data;
 }
 
-/** Cromos de un grupo, agrupados por equipo (orden de página/número) */
+/** Cromos de un grupo, agrupados por equipo (orden de página/número).
+ *  Incluye un JOIN inverso self-ref con el sticker legend que apunta
+ *  a cada slot (si existe). El field `legend` queda como array vacío
+ *  para slots sin legend linkeada (PostgREST devuelve arrays para
+ *  embedded resources).
+ */
 export async function getStickersByGroup(albumId: string, groupCode: string) {
   const supabase = await createClient();
   const { data: stickers } = await supabase
     .from("stickers")
-    .select("id, code, number, name, team, group_code, type, page")
+    .select(
+      `id, code, number, name, team, group_code, type, page,
+       legend:stickers (id, code)`,
+    )
     .eq("album_id", albumId)
     .eq("group_code", groupCode.toUpperCase())
     .order("page", { ascending: true })
