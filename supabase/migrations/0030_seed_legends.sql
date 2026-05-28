@@ -48,6 +48,36 @@ begin
   select id into v_eng12 from public.stickers where album_id = v_album_id and code = 'ENG12';
   select id into v_kor18 from public.stickers where album_id = v_album_id and code = 'KOR18';
 
+  -- Defensive: validate that all 25 expected player slots were found.
+  -- If any is NULL, the corresponding legend would be inserted unlinked
+  -- (silent breakage). Fail loud instead. Stand-alones (LEGBRA0, LEGMEX0)
+  -- don't need lookup — their linked_sticker_id is intentionally NULL.
+  if v_tur14 is null then raise exception 'Slot TUR14 not found in stickers'; end if;
+  if v_sen15 is null then raise exception 'Slot SEN15 not found in stickers'; end if;
+  if v_usa16 is null then raise exception 'Slot USA16 not found in stickers'; end if;
+  if v_uru10 is null then raise exception 'Slot URU10 not found in stickers'; end if;
+  if v_cro9  is null then raise exception 'Slot CRO9 not found in stickers';  end if;
+  if v_col20 is null then raise exception 'Slot COL20 not found in stickers'; end if;
+  if v_bel2  is null then raise exception 'Slot BEL2 not found in stickers';  end if;
+  if v_arg17 is null then raise exception 'Slot ARG17 not found in stickers'; end if;
+  if v_egy17 is null then raise exception 'Slot EGY17 not found in stickers'; end if;
+  if v_por15 is null then raise exception 'Slot POR15 not found in stickers'; end if;
+  if v_aus2  is null then raise exception 'Slot AUS2 not found in stickers';  end if;
+  if v_nor15 is null then raise exception 'Slot NOR15 not found in stickers'; end if;
+  if v_ned3  is null then raise exception 'Slot NED3 not found in stickers';  end if;
+  if v_ger15 is null then raise exception 'Slot GER15 not found in stickers'; end if;
+  if v_mar19 is null then raise exception 'Slot MAR19 not found in stickers'; end if;
+  if v_esp15 is null then raise exception 'Slot ESP15 not found in stickers'; end if;
+  if v_cuw12 is null then raise exception 'Slot CUW12 not found in stickers'; end if;
+  if v_jpn12 is null then raise exception 'Slot JPN12 not found in stickers'; end if;
+  if v_alg15 is null then raise exception 'Slot ALG15 not found in stickers'; end if;
+  if v_ecu9  is null then raise exception 'Slot ECU9 not found in stickers';  end if;
+  if v_swe20 is null then raise exception 'Slot SWE20 not found in stickers'; end if;
+  if v_fra20 is null then raise exception 'Slot FRA20 not found in stickers'; end if;
+  if v_par10 is null then raise exception 'Slot PAR10 not found in stickers'; end if;
+  if v_eng12 is null then raise exception 'Slot ENG12 not found in stickers'; end if;
+  if v_kor18 is null then raise exception 'Slot KOR18 not found in stickers'; end if;
+
   -- 27 legends. numbers 1..14 are page 100; numbers 15..27 are page 101.
   -- All vertical 3:4 player cards.
   insert into public.stickers
@@ -87,6 +117,7 @@ begin
     number             = excluded.number,
     name               = excluded.name,
     team               = excluded.team,
+    group_code         = excluded.group_code,
     type               = excluded.type,
     rarity             = excluded.rarity,
     page               = excluded.page,
