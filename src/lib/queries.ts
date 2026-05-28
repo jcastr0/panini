@@ -1,6 +1,34 @@
 import { createClient } from "@/lib/supabase/server";
 import { sectionKey } from "@/lib/album-config";
 
+/**
+ * Supabase tiene un cap server-side default de 1000 filas. El cap NO se
+ * bypasa con .range(0, 9999) — el server limita a 1000 filas por response
+ * regardless del Range header. Para listas que pasan de 1000 hay que
+ * paginar con múltiples .range() calls.
+ *
+ * Esta función pagina automáticamente hasta agotar resultados. Devuelve
+ * el array de todas las filas concatenadas.
+ *
+ *   await paginate(buildQuery: (from, to) => Promise<{ data, count? }>, pageSize = 1000)
+ */
+export async function paginate<T>(
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null }>,
+  pageSize = 1000,
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  // Bound el loop por seguridad — 50 páginas × 1000 = 50k filas máximo.
+  for (let i = 0; i < 50; i++) {
+    const { data } = await buildQuery(from, from + pageSize - 1);
+    const batch = data ?? [];
+    all.push(...batch);
+    if (batch.length < pageSize) break; // no hay más
+    from += pageSize;
+  }
+  return all;
+}
+
 export async function getActiveAlbum() {
   const supabase = await createClient();
   const { data } = await supabase
@@ -28,16 +56,19 @@ export async function getUserStats(userId: string) {
     .eq("album_id", album.id);
   const total = totalCount ?? 0;
 
-  // user_stickers necesita la quantity por fila (para duplicates),
-  // así que pedimos las filas con .range() amplio para evitar el cap.
-  const { data: rows } = await supabase
-    .from("user_stickers")
-    .select("sticker_id, quantity")
-    .eq("user_id", userId)
-    .gt("quantity", 0)
-    .range(0, 9999);
+  // user_stickers necesita la quantity por fila (para duplicates).
+  // Paginamos para bypassear el cap server-side de 1000 filas.
+  const rows = await paginate<{ sticker_id: string; quantity: number }>(
+    (from, to) =>
+      supabase
+        .from("user_stickers")
+        .select("sticker_id, quantity")
+        .eq("user_id", userId)
+        .gt("quantity", 0)
+        .range(from, to),
+  );
 
-  const owned = rows?.length ?? 0;
+  const owned = rows.length;
   const duplicates =
     rows?.reduce(
       (acc, r) => acc + Math.max(0, (r.quantity ?? 0) - 1),
@@ -174,30 +205,37 @@ export async function getLastActivity(userId: string): Promise<Date | null> {
   return data?.updated_at ? new Date(data.updated_at) : null;
 }
 
-/** Stats por sección del álbum (1 viaje a DB).
- *  Usa .range(0, 9999) para evitar la truncación a 1000 filas del API
- *  REST de Supabase. El álbum tiene 1021 stickers (994 + 27 legends)
- *  y un usuario completo posee >1000 rows en user_stickers. */
+/** Stats por sección del álbum.
+ *  Pagina stickers y user_stickers para bypassear el cap server-side de
+ *  1000 filas de Supabase. El álbum tiene 1021 stickers (994 + 27 legends)
+ *  y un usuario completo posee >1000 rows en user_stickers — sin paginar,
+ *  los tiles del /album mostrarían progreso incorrecto (ej. historia 0/0). */
 export async function getAllSectionStats(userId: string, albumId: string) {
   const supabase = await createClient();
-  const [{ data: stickers }, { data: owned }] = await Promise.all([
-    supabase
-      .from("stickers")
-      .select("id, group_code, page, type")
-      .eq("album_id", albumId)
-      .range(0, 9999),
-    supabase
-      .from("user_stickers")
-      .select("sticker_id, quantity")
-      .eq("user_id", userId)
-      .gt("quantity", 0)
-      .range(0, 9999),
+  const [stickers, owned] = await Promise.all([
+    paginate<{ id: string; group_code: string | null; page: number | null; type: string }>(
+      (from, to) =>
+        supabase
+          .from("stickers")
+          .select("id, group_code, page, type")
+          .eq("album_id", albumId)
+          .range(from, to),
+    ),
+    paginate<{ sticker_id: string; quantity: number }>(
+      (from, to) =>
+        supabase
+          .from("user_stickers")
+          .select("sticker_id, quantity")
+          .eq("user_id", userId)
+          .gt("quantity", 0)
+          .range(from, to),
+    ),
   ]);
 
-  const ownedSet = new Set((owned ?? []).map((r) => r.sticker_id));
+  const ownedSet = new Set(owned.map((r) => r.sticker_id));
   const stats = new Map<string, { total: number; owned: number }>();
 
-  (stickers ?? []).forEach((s) => {
+  stickers.forEach((s) => {
     const key = sectionKey(s.group_code, s.page, s.type);
     if (key === "other") return;
     const entry = stats.get(key) ?? { total: 0, owned: 0 };

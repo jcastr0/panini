@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveAlbum } from "@/lib/queries";
+import { getActiveAlbum, paginate } from "@/lib/queries";
 import { ProposeForm } from "./_components/propose-form";
 
 type Sticker = {
@@ -35,22 +35,28 @@ export default async function NewTradeWithUser({
         .select("id, username, display_name, city, country, avatar_url")
         .eq("id", otherId)
         .maybeSingle(),
-      supabase
-        .from("stickers")
-        .select("id, number, name, team, group_code, type")
-        .eq("album_id", album.id)
-        .order("number", { ascending: true })
-        .range(0, 9999),
-      supabase
-        .from("user_stickers")
-        .select("sticker_id, quantity")
-        .eq("user_id", user.id)
-        .range(0, 9999),
-      supabase
-        .from("user_stickers")
-        .select("sticker_id, quantity")
-        .eq("user_id", otherId)
-        .range(0, 9999),
+      paginate<Sticker>((from, to) =>
+        supabase
+          .from("stickers")
+          .select("id, number, name, team, group_code, type")
+          .eq("album_id", album.id)
+          .order("number", { ascending: true })
+          .range(from, to),
+      ).then((data) => ({ data })),
+      paginate<{ sticker_id: string; quantity: number }>((from, to) =>
+        supabase
+          .from("user_stickers")
+          .select("sticker_id, quantity")
+          .eq("user_id", user.id)
+          .range(from, to),
+      ).then((data) => ({ data })),
+      paginate<{ sticker_id: string; quantity: number }>((from, to) =>
+        supabase
+          .from("user_stickers")
+          .select("sticker_id, quantity")
+          .eq("user_id", otherId)
+          .range(from, to),
+      ).then((data) => ({ data })),
     ]);
 
   if (!other) notFound();

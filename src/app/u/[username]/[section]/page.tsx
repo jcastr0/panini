@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveAlbum, getStickersBySection } from "@/lib/queries";
+import { getActiveAlbum, getStickersBySection, paginate } from "@/lib/queries";
 import { SPECIAL_SECTIONS, type SpecialKey } from "@/lib/album-config";
 import { SpecialSection } from "@/app/(app)/album/_components/special-section";
 import type { SectionSticker } from "@/app/(app)/album/_components/team-block";
@@ -59,11 +59,13 @@ export default async function PublicSpecialSectionPage({
 
   const [stickers, { data: ownedRows }] = await Promise.all([
     getStickersBySection(album.id, section),
-    supabase
-      .from("user_stickers")
-      .select("sticker_id, quantity")
-      .eq("user_id", profile.id)
-      .range(0, 9999),
+    paginate<{ sticker_id: string; quantity: number }>((from, to) =>
+      supabase
+        .from("user_stickers")
+        .select("sticker_id, quantity")
+        .eq("user_id", profile.id)
+        .range(from, to),
+    ).then((data) => ({ data })),
   ]);
 
   const qtyMap = new Map<string, number>();

@@ -4,6 +4,7 @@ import {
   getActiveAlbum,
   getCollectorCard,
   getUserStats,
+  paginate,
 } from "@/lib/queries";
 import { Progress } from "@/components/ui/progress";
 import { AlbumOwnerTag } from "../album/_components/album-owner-tag";
@@ -24,18 +25,31 @@ export default async function CollectionPage() {
 
   const [stickersResult, ownedResult, stats, collectorCard] = await Promise.all(
     [
-      supabase
-        .from("stickers")
-        .select("id, code, number, name, team, group_code, type, page")
-        .eq("album_id", album.id)
-        .order("page", { ascending: true })
-        .order("number", { ascending: true })
-        .range(0, 9999),
-      supabase
-        .from("user_stickers")
-        .select("sticker_id, quantity")
-        .eq("user_id", user.id)
-        .range(0, 9999),
+      paginate<{
+        id: string;
+        code: string | null;
+        number: number;
+        name: string;
+        team: string | null;
+        group_code: string | null;
+        type: "normal" | "shiny" | "legend" | "special";
+        page: number | null;
+      }>((from, to) =>
+        supabase
+          .from("stickers")
+          .select("id, code, number, name, team, group_code, type, page")
+          .eq("album_id", album.id)
+          .order("page", { ascending: true })
+          .order("number", { ascending: true })
+          .range(from, to),
+      ).then((data) => ({ data })),
+      paginate<{ sticker_id: string; quantity: number }>((from, to) =>
+        supabase
+          .from("user_stickers")
+          .select("sticker_id, quantity")
+          .eq("user_id", user.id)
+          .range(from, to),
+      ).then((data) => ({ data })),
       getUserStats(user.id),
       getCollectorCard(user.id),
     ],

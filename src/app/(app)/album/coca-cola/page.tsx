@@ -4,6 +4,7 @@ import {
   getActiveAlbum,
   getCollectorCard,
   getStickersBySection,
+  paginate,
 } from "@/lib/queries";
 import { sectionHref, sectionLabel, SPECIAL_SECTIONS } from "@/lib/album-config";
 import { SpecialSectionPage } from "../_components/special-section-page";
@@ -25,11 +26,13 @@ export default async function CocaColaPage() {
 
   const [stickers, ownedRows, collectorCard] = await Promise.all([
     getStickersBySection(album.id, "coca-cola"),
-    supabase
-      .from("user_stickers")
-      .select("sticker_id, quantity")
-      .eq("user_id", user.id)
-      .range(0, 9999),
+    paginate<{ sticker_id: string; quantity: number }>((from, to) =>
+      supabase
+        .from("user_stickers")
+        .select("sticker_id, quantity")
+        .eq("user_id", user.id)
+        .range(from, to),
+    ).then((data) => ({ data })),
     getCollectorCard(user.id),
   ]);
 

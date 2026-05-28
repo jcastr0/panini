@@ -6,6 +6,7 @@ import {
   getActiveAlbum,
   getCollectorCard,
   getStickersByGroup,
+  paginate,
 } from "@/lib/queries";
 import {
   GROUP_CODES,
@@ -47,11 +48,17 @@ export default async function GroupPage({
 
   const [stickers, ownedRows, collectorCard] = await Promise.all([
     getStickersByGroup(album.id, code),
-    supabase
-      .from("user_stickers")
-      .select("sticker_id, quantity, display_variant")
-      .eq("user_id", user.id)
-      .range(0, 9999),
+    paginate<{
+      sticker_id: string;
+      quantity: number;
+      display_variant: "normal" | "legend" | null;
+    }>((from, to) =>
+      supabase
+        .from("user_stickers")
+        .select("sticker_id, quantity, display_variant")
+        .eq("user_id", user.id)
+        .range(from, to),
+    ).then((data) => ({ data })),
     getCollectorCard(user.id),
   ]);
 
