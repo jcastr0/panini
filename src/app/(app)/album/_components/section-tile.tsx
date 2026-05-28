@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { Check, Sparkles, Trophy, Crown, Star } from "lucide-react";
+import { Check } from "lucide-react";
+import { FifaIcon } from "@/components/icons/FifaIcon";
+import { TrophyIcon } from "@/components/icons/TrophyIcon";
+import { CocaColaIcon } from "@/components/icons/CocaColaIcon";
 import {
   GROUP_TEAMS,
   SPECIAL_SECTIONS,
@@ -11,10 +14,17 @@ import {
 } from "@/lib/album-config";
 
 const SPECIAL_ICONS: Record<SpecialKey, React.ReactNode> = {
-  apertura:    <Sparkles className="size-12" />,
-  historia:    <Trophy   className="size-12" />,
-  legends:     <Crown    className="size-12" />,
-  "coca-cola": <Star     className="size-12" />,
+  apertura:    <FifaIcon    className="h-10 w-auto" />,
+  historia:    <TrophyIcon  className="size-14" />,
+  legends: (
+    <span className="flex flex-col items-center gap-1">
+      <TrophyIcon className="size-10" />
+      <span className="font-display font-black text-xs tracking-[0.2em] uppercase">
+        Legends
+      </span>
+    </span>
+  ),
+  "coca-cola": <CocaColaIcon className="h-7 w-auto" />,
 };
 
 type SectionKey = GroupCode | SpecialKey;
