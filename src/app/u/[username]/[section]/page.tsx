@@ -4,7 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveAlbum, getStickersBySection } from "@/lib/queries";
 import { SPECIAL_SECTIONS, type SpecialKey } from "@/lib/album-config";
-import { StickerTileReadOnly } from "../_components/sticker-tile-readonly";
+import { SpecialSection } from "@/app/(app)/album/_components/special-section";
+import type { SectionSticker } from "@/app/(app)/album/_components/team-block";
 
 const VALID_SECTIONS = new Set<SpecialKey>([
   "apertura",
@@ -70,13 +71,15 @@ export default async function PublicSpecialSectionPage({
   const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
 
   // Agrupar por página
-  const byPage = new Map<number, typeof stickers>();
+  const byPage = new Map<number, SectionSticker[]>();
   stickers.forEach((s) => {
     const p = s.page ?? 0;
     if (!byPage.has(p)) byPage.set(p, []);
-    byPage.get(p)!.push(s);
+    byPage.get(p)!.push(s as SectionSticker);
   });
-  const pages = [...byPage.entries()].sort(([a], [b]) => a - b);
+  const pages = [...byPage.entries()].sort(([a], [b]) => a - b) as Array<
+    [number, SectionSticker[]]
+  >;
   const pageTitles = PAGE_TITLES[section];
 
   const ownerDisplay = profile.display_name ?? `@${profile.username}`;
@@ -133,46 +136,20 @@ export default async function PublicSpecialSectionPage({
         </div>
       </section>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {pages.map(([page, list]) => {
-          const ownedInPage = list.filter(
-            (s) => (qtyMap.get(s.id) ?? 0) >= 1,
-          ).length;
-          return (
-            <div
-              key={page}
-              className="border rounded-xl bg-card p-4 space-y-3 relative"
-            >
-              <div className="absolute -top-2 left-4 px-2 bg-background">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Página {String(page).padStart(2, "0")}
-                </span>
-              </div>
-              <div className="flex items-end justify-between pt-1">
-                <h3 className="font-display text-lg font-semibold tracking-tight">
-                  {pageTitles[page] ?? `Página ${page}`}
-                </h3>
-                <span className="font-mono text-sm text-muted-foreground tabular">
-                  {ownedInPage}/{list.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {list.map((s) => (
-                  <StickerTileReadOnly
-                    key={s.id}
-                    code={s.code}
-                    number={s.number}
-                    name={s.name}
-                    team={s.team}
-                    type={s.type}
-                    quantity={qtyMap.get(s.id) ?? 0}
-                    accent={special.accent}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <div
+        style={
+          {
+            "--accent-section": special.accent,
+            "--tint-section": special.tint,
+          } as React.CSSProperties
+        }
+      >
+        <SpecialSection
+          pages={pages}
+          qtyMap={qtyMap}
+          pageTitles={pageTitles}
+          readOnly
+        />
       </div>
 
       <p className="text-xs text-muted-foreground italic text-center">

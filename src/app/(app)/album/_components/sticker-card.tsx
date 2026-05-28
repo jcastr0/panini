@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Minus, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Check, Minus, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,12 @@ type Props = {
    * Sin valor: render normal.
    */
   trofeoHalf?: "top" | "bottom";
+  /**
+   * Modo lectura — la vista del álbum de otro usuario. Oculta los
+   * controles +/- y muestra un badge "La tiene · ×N" / "Le falta"
+   * en su lugar. El zoom (lightbox) sigue activo.
+   */
+  readOnly?: boolean;
 };
 
 export function StickerCard({
@@ -45,6 +51,7 @@ export function StickerCard({
   initialQuantity,
   horizontal = false,
   trofeoHalf,
+  readOnly = false,
 }: Props) {
   const [qty, setQty] = useState(initialQuantity);
   const [pending, startTransition] = useTransition();
@@ -237,7 +244,37 @@ export function StickerCard({
       >
         <div className="relative z-10 flex flex-col gap-1.5">
           {(() => {
-            const controls = (
+            const readOnlyBadge = (
+              <div className="flex items-center justify-between mt-1 gap-2 min-h-10">
+                {owned ? (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold",
+                      "text-[var(--accent-section,var(--pitch))]",
+                      "bg-[color-mix(in_oklab,transparent,var(--accent-section,var(--pitch))_14%)]",
+                    )}
+                  >
+                    <Check className="size-3" strokeWidth={2.5} /> La tiene
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground italic">
+                    Le falta
+                  </span>
+                )}
+                {dup && (
+                  <span
+                    className={cn(
+                      "font-mono tabular text-xs font-bold rounded px-2 py-0.5",
+                      "text-[var(--gold)] bg-[color-mix(in_oklab,transparent,var(--gold)_18%)]",
+                    )}
+                  >
+                    ×{qty}
+                  </span>
+                )}
+              </div>
+            );
+
+            const controls = readOnly ? readOnlyBadge : (
               <div className="flex items-center justify-between mt-1 gap-2">
                 <button
                   type="button"

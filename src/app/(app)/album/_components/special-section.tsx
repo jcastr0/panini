@@ -14,10 +14,13 @@ export function SpecialSection({
   pages,
   qtyMap,
   pageTitles,
+  readOnly = false,
 }: {
   pages: Array<[number, SectionSticker[]]>;
   qtyMap: Map<string, number>;
   pageTitles: Record<number, string>;
+  /** Vista del álbum de otro usuario — sin controles +/-. */
+  readOnly?: boolean;
 }) {
   return (
     <div className="grid lg:grid-cols-2 gap-6">
@@ -69,6 +72,7 @@ export function SpecialSection({
                         : "bottom"
                       : undefined
                   }
+                  readOnly={readOnly}
                 />
               ))}
             </div>

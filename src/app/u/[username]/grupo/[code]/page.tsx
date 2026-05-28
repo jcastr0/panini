@@ -13,7 +13,10 @@ import {
   TEAM_PALETTES,
   type GroupCode,
 } from "@/lib/album-config";
-import { StickerTileReadOnly } from "../../_components/sticker-tile-readonly";
+import {
+  TeamBlock,
+  type SectionSticker,
+} from "@/app/(app)/album/_components/team-block";
 
 const VALID_CODES = new Set(GROUP_CODES.map((c) => c.toLowerCase()));
 
@@ -32,7 +35,6 @@ export default async function PublicGroupPage({
 
   const supabase = await createClient();
 
-  // Profile del dueño del álbum visto
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, username, display_name, is_public_profile")
@@ -43,7 +45,6 @@ export default async function PublicGroupPage({
   const album = await getActiveAlbum();
   if (!album) return <p>No hay álbum activo.</p>;
 
-  // Stickers del grupo + qty del DUEÑO (no del viewer)
   const [stickers, { data: ownedRows }] = await Promise.all([
     getStickersByGroup(album.id, code),
     supabase
@@ -58,11 +59,11 @@ export default async function PublicGroupPage({
   );
 
   const flags = GROUP_TEAMS[code];
-  const byTeam = new Map<string, typeof stickers>();
+  const byTeam = new Map<string, SectionSticker[]>();
   stickers.forEach((s) => {
     const key = s.team ?? "";
     if (!byTeam.has(key)) byTeam.set(key, []);
-    byTeam.get(key)!.push(s);
+    byTeam.get(key)!.push(s as SectionSticker);
   });
   const orderedTeams = flags
     .map((info) => ({ info, list: byTeam.get(info.name) ?? [] }))
@@ -77,12 +78,6 @@ export default async function PublicGroupPage({
   const palette =
     TEAM_PALETTES[currentTeam.info.name] ?? GROUP_PALETTES[code];
 
-  const teamOwned = currentTeam.list.filter(
-    (s) => (qtyMap.get(s.id) ?? 0) >= 1,
-  ).length;
-  const teamTotal = currentTeam.list.length;
-  const teamPercent =
-    teamTotal > 0 ? Math.round((teamOwned / teamTotal) * 100) : 0;
   const groupTotal = stickers.length;
   const groupOwned = stickers.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length;
   const groupPercent =
@@ -146,36 +141,33 @@ export default async function PublicGroupPage({
             </p>
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-3">
-              <span
-                className="font-display text-2xl sm:text-3xl font-bold tabular"
-                style={{ color: palette.accent }}
-              >
-                {groupPercent}%
-              </span>
-              <div className="flex-1 h-2.5 rounded-full bg-background/60 overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${groupPercent}%`,
-                    backgroundColor: palette.accent,
-                  }}
-                />
-              </div>
-              <span className="font-mono tabular text-sm text-muted-foreground">
-                {groupOwned}/{groupTotal}
-              </span>
+          <div className="flex items-center gap-3">
+            <span
+              className="font-display text-2xl sm:text-3xl font-bold tabular"
+              style={{ color: palette.accent }}
+            >
+              {groupPercent}%
+            </span>
+            <div className="flex-1 h-2.5 rounded-full bg-background/60 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${groupPercent}%`,
+                  backgroundColor: palette.accent,
+                }}
+              />
             </div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground text-right">
-              {currentTeam.info.flag} {currentTeam.info.name} · {teamOwned}/
-              {teamTotal} · {teamPercent}%
-            </p>
+            <span className="font-mono tabular text-sm text-muted-foreground">
+              {groupOwned}/{groupTotal}
+            </span>
           </div>
         </div>
       </section>
 
-      <nav className="grid grid-cols-2 sm:grid-cols-4 gap-2" aria-label="Equipos">
+      <nav
+        className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+        aria-label="Equipos"
+      >
         {orderedTeams.map((t, i) => {
           const ownedInTeam = t.list.filter(
             (s) => (qtyMap.get(s.id) ?? 0) >= 1,
@@ -220,32 +212,21 @@ export default async function PublicGroupPage({
         })}
       </nav>
 
-      <div>
-        <h3 className="font-display text-xl font-semibold tracking-tight mb-3 flex items-center gap-2">
-          <span className="text-2xl">{currentTeam.info.flag}</span>
-          {currentTeam.info.name}
-          <span className="font-mono text-xs text-muted-foreground ml-auto">
-            {teamOwned}/{teamTotal}
-          </span>
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {currentTeam.list.map((s) => (
-            <StickerTileReadOnly
-              key={s.id}
-              code={s.code}
-              number={s.number}
-              name={s.name}
-              team={s.team}
-              type={s.type}
-              quantity={qtyMap.get(s.id) ?? 0}
-              accent={palette.accent}
-            />
-          ))}
-        </div>
-      </div>
+      <TeamBlock
+        teamName={currentTeam.info.name}
+        teamFlag={currentTeam.info.flag}
+        teamInfo={currentTeam.info}
+        list={currentTeam.list}
+        qtyMap={qtyMap}
+        groupCode={code}
+        groupFlags={flags.map((f) => ({ name: f.name, flag: f.flag }))}
+        tint={palette.tint}
+        accent={palette.accent}
+        readOnly
+      />
 
       <p className="text-xs text-muted-foreground italic text-center">
-        Vista de solo lectura · este es el álbum de @{profile.username}, no el tuyo.
+        Vista de solo lectura · estás viendo el álbum de @{profile.username}.
       </p>
 
       <nav className="border-t pt-6 flex items-center justify-between gap-3">

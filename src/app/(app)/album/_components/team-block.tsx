@@ -21,6 +21,7 @@ export function TeamBlock({
   groupFlags,
   tint,
   accent,
+  readOnly = false,
 }: {
   teamName: string;
   teamFlag?: string;
@@ -35,6 +36,8 @@ export function TeamBlock({
   tint?: string;
   /** Accent del equipo activo — borde sutil de las hojas */
   accent?: string;
+  /** Vista del álbum de otro usuario — sin controles +/-. */
+  readOnly?: boolean;
 }) {
   const pagesMap = new Map<number, SectionSticker[]>();
   list.forEach((s) => {
@@ -106,6 +109,7 @@ export function TeamBlock({
                   groupFlags={groupFlags}
                   activeTeam={teamName}
                   accent={accent}
+                  readOnly={readOnly}
                 />
               ) : (
                 <Page1Grid
@@ -113,6 +117,7 @@ export function TeamBlock({
                   qtyMap={qtyMap}
                   teamInfo={isFirstPage ? teamInfo : undefined}
                   accent={accent}
+                  readOnly={readOnly}
                 />
               )}
             </div>
@@ -128,12 +133,14 @@ function Page1Grid({
   qtyMap,
   teamInfo,
   accent,
+  readOnly,
 }: {
   stickers: SectionSticker[];
   qtyMap: Map<string, number>;
   /** Cuando se proporciona, ocupa el espacio vacío izquierdo de la hoja 1 */
   teamInfo?: TeamInfo;
   accent?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
@@ -144,7 +151,7 @@ function Page1Grid({
       )}
       {stickers.map((s) => (
         <div key={s.id}>
-          <StickerCardSlot s={s} qtyMap={qtyMap} />
+          <StickerCardSlot s={s} qtyMap={qtyMap} readOnly={readOnly} />
         </div>
       ))}
     </div>
@@ -243,6 +250,7 @@ function Page2Grid({
   groupFlags,
   activeTeam,
   accent,
+  readOnly,
 }: {
   stickers: SectionSticker[];
   qtyMap: Map<string, number>;
@@ -250,6 +258,7 @@ function Page2Grid({
   groupFlags?: Array<{ name: string; flag: string }>;
   activeTeam: string;
   accent?: string;
+  readOnly?: boolean;
 }) {
   // Layout: "11 12 13H / 14 15 16 17 / [Grupo] 18 19 20"
   const teamPhotoIdx = stickers.findIndex((s) => s.number === 13);
@@ -269,7 +278,12 @@ function Page2Grid({
     const isTeamPhoto = i === teamPhotoIdx;
     items.push(
       <div key={s.id} className={isTeamPhoto ? "sm:col-span-2" : undefined}>
-        <StickerCardSlot s={s} qtyMap={qtyMap} horizontal={isTeamPhoto} />
+        <StickerCardSlot
+          s={s}
+          qtyMap={qtyMap}
+          horizontal={isTeamPhoto}
+          readOnly={readOnly}
+        />
       </div>,
     );
   });
@@ -284,10 +298,12 @@ function StickerCardSlot({
   s,
   qtyMap,
   horizontal,
+  readOnly,
 }: {
   s: SectionSticker;
   qtyMap: Map<string, number>;
   horizontal?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <StickerCard
@@ -299,6 +315,7 @@ function StickerCardSlot({
       type={s.type}
       initialQuantity={qtyMap.get(s.id) ?? 0}
       horizontal={horizontal}
+      readOnly={readOnly}
     />
   );
 }
