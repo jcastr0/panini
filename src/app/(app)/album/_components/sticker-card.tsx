@@ -414,6 +414,14 @@ function stickerImageFromCode(
   owned: boolean,
 ): string | null {
   if (!owned || !code) return null;
+  // Legends: LEGARG17 → /laminas/LEG/legarg17.jpg.
+  // Stand-alone legends: LEGBRA0, LEGMEX0 use the same pattern.
+  // Must run BEFORE the generic team regex (which would mismatch LEG as team).
+  const legMatch = code.match(/^LEG([A-Z]{3})(\d+)$/);
+  if (legMatch) {
+    const [, team, n] = legMatch;
+    return `/laminas/LEG/leg${team.toLowerCase()}${n}.jpg`;
+  }
   const teamMatch = code.match(/^([A-Z]{3})(\d+)$/);
   if (teamMatch) {
     const [, prefix, n] = teamMatch;
