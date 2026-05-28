@@ -91,27 +91,30 @@ export default async function Home() {
 
           <div className="lg:col-span-5 relative">
             <div className="aspect-[4/5] relative">
-              {/* Stylized stack of stickers */}
               <StickerPreview
                 team="Argentina"
                 num={97}
                 shiny
+                imageSrc="/laminas/LEG/legarg17.jpg"
                 className="absolute top-4 left-2 rotate-[-6deg]"
               />
               <StickerPreview
                 team="Colombia"
                 num={641}
+                imageSrc="/laminas/LEG/legcol20.jpg"
                 className="absolute top-24 left-32 rotate-[4deg]"
               />
               <StickerPreview
                 team="México"
                 num={32}
                 shiny
+                imageSrc="/cocacola/cc4.jpg"
                 className="absolute top-44 left-10 rotate-[-2deg]"
               />
               <StickerPreview
                 team="Brasil"
                 num={159}
+                imageSrc="/laminas/BRA/bra19.jpg"
                 className="absolute top-64 left-40 rotate-[8deg]"
               />
             </div>
@@ -170,11 +173,13 @@ function StickerPreview({
   team,
   num,
   shiny,
+  imageSrc,
   className,
 }: {
   team: string;
   num: number;
   shiny?: boolean;
+  imageSrc?: string;
   className?: string;
 }) {
   return (
@@ -185,10 +190,15 @@ function StickerPreview({
         <span>#{num.toString().padStart(3, "0")}</span>
         <span>{shiny ? "Shiny" : "Base"}</span>
       </div>
-      <div className="mt-2 h-32 rounded bg-[color-mix(in_oklab,var(--card),var(--muted)_40%)] grid place-items-center">
-        <span className="font-display text-3xl font-bold tracking-tighter">
-          {team.slice(0, 3).toUpperCase()}
-        </span>
+      <div className="mt-2 h-32 rounded bg-[color-mix(in_oklab,var(--card),var(--muted)_40%)] grid place-items-center overflow-hidden">
+        {imageSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageSrc} alt={team} className="size-full object-cover object-top" />
+        ) : (
+          <span className="font-display text-3xl font-bold tracking-tighter">
+            {team.slice(0, 3).toUpperCase()}
+          </span>
+        )}
       </div>
       <div className="mt-2 font-display font-semibold leading-tight">{team}</div>
     </div>
