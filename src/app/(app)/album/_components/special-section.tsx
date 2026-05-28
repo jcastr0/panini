@@ -15,13 +15,17 @@ export function SpecialSection({
   qtyMap,
   pageTitles,
   readOnly = false,
+  sectionKey,
 }: {
   pages: Array<[number, SectionSticker[]]>;
   qtyMap: Map<string, number>;
   pageTitles: Record<number, string>;
   /** Vista del álbum de otro usuario — sin controles +/-. */
   readOnly?: boolean;
+  /** Sección actual — controla layouts especiales (ej. historia all-horizontal). */
+  sectionKey?: "apertura" | "historia" | "coca-cola";
 }) {
+  const isHistoria = sectionKey === "historia";
   return (
     <div className="grid lg:grid-cols-2 gap-6">
       {pages.map(([page, list]) => {
@@ -52,16 +56,19 @@ export function SpecialSection({
                 "grid",
                 isTrofeo
                   ? "grid-cols-1 max-w-[220px] mx-auto gap-0"
-                  : "grid-cols-2 sm:grid-cols-3 gap-3",
+                  : isHistoria
+                    ? "grid-cols-1 gap-3"
+                    : "grid-cols-2 sm:grid-cols-3 gap-3",
               )}
             >
               {list.map((s) => {
-                // Cromos horizontales por diseño (ocupan 2 columnas):
-                //   - Apertura #0 (Panini chilena)
-                //   - Apertura #3 (Mascotas Maple/Zayu/Clutch)
+                // Cromos horizontales por diseño:
+                //   - Apertura #0 (Panini chilena) y #3 (Mascotas): col-span-2 + tall
+                //   - Historia (page 99): todas son team photos → tall en su grid-cols-1
                 // Sus archivos JPG están ya rotados a horizontal (560×420).
                 const isHorizontalApertura =
-                  !isTrofeo && (s.number === 0 || s.number === 3);
+                  !isTrofeo && !isHistoria && (s.number === 0 || s.number === 3);
+                const horizontal = isHorizontalApertura || isHistoria;
                 return (
                   <div
                     key={s.id}
@@ -77,7 +84,8 @@ export function SpecialSection({
                       team={s.team}
                       type={s.type}
                       initialQuantity={qtyMap.get(s.id) ?? 0}
-                      horizontal={isHorizontalApertura}
+                      horizontal={horizontal}
+                      tall={horizontal}
                       trofeoHalf={
                         isTrofeo
                           ? s.number === 1

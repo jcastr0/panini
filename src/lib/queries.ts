@@ -92,6 +92,64 @@ export async function getStickersBySection(
   return stickers ?? [];
 }
 
+/**
+ * Porcentaje de avance para varios usuarios a la vez (1 query agregado).
+ * Útil para listar amigos con su progreso sin N round-trips a DB.
+ * Devuelve Map<user_id, { owned, total, percent }>.
+ */
+export async function getProgressForUsers(userIds: string[]) {
+  const result = new Map<
+    string,
+    { owned: number; total: number; percent: number }
+  >();
+  if (userIds.length === 0) return result;
+
+  const supabase = await createClient();
+  const album = await getActiveAlbum();
+  if (!album) return result;
+
+  const { data: stickers } = await supabase
+    .from("stickers")
+    .select("id")
+    .eq("album_id", album.id);
+  const total = stickers?.length ?? 0;
+
+  const { data: rows } = await supabase
+    .from("user_stickers")
+    .select("user_id, sticker_id")
+    .in("user_id", userIds)
+    .gt("quantity", 0);
+
+  const counts = new Map<string, number>();
+  (rows ?? []).forEach((r) => {
+    counts.set(r.user_id, (counts.get(r.user_id) ?? 0) + 1);
+  });
+
+  userIds.forEach((uid) => {
+    const owned = counts.get(uid) ?? 0;
+    const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
+    result.set(uid, { owned, total, percent });
+  });
+  return result;
+}
+
+/**
+ * Última fecha de actividad de un usuario: la última vez que tocó
+ * (pegó/despegó) un cromo. Se basa en MAX(user_stickers.updated_at).
+ * Devuelve null si nunca ha tocado el álbum.
+ */
+export async function getLastActivity(userId: string): Promise<Date | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("user_stickers")
+    .select("updated_at")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.updated_at ? new Date(data.updated_at) : null;
+}
+
 /** Stats por sección del álbum (1 viaje a DB) */
 export async function getAllSectionStats(userId: string, albumId: string) {
   const supabase = await createClient();

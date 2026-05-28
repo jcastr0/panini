@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getProgressForUsers } from "@/lib/queries";
 import { ShareCard } from "../_components/share-card";
 
 export default async function AmigosPage({
@@ -35,6 +36,11 @@ export default async function AmigosPage({
     resultsQuery = resultsQuery.ilike("username", `${query}%`);
   }
   const { data: results } = await resultsQuery;
+
+  // Progreso de cada amigo en un solo viaje a DB
+  const progressMap = await getProgressForUsers(
+    (results ?? []).map((p) => p.id),
+  );
 
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://paninijd.vercel.app";
@@ -92,11 +98,12 @@ export default async function AmigosPage({
             .slice(0, 2)
             .map((s) => s[0]?.toUpperCase())
             .join("");
+          const prog = progressMap.get(p.id);
           return (
             <li key={p.id}>
               <Link
                 href={`/u/${p.username}`}
-                className="block border rounded-xl bg-card p-4 hover:border-[var(--panini-blue)]/40 transition-colors group"
+                className="block border rounded-xl bg-card p-4 hover:border-[var(--panini-blue)]/40 transition-colors group space-y-3"
               >
                 <div className="flex items-center gap-3">
                   <div className="size-12 rounded-full overflow-hidden bg-muted grid place-items-center text-sm font-semibold ring-1 ring-border">
@@ -111,7 +118,7 @@ export default async function AmigosPage({
                       <span>{initials || "?"}</span>
                     )}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="font-display font-semibold truncate group-hover:text-[var(--panini-blue)] transition-colors">
                       {name}
                     </p>
@@ -121,6 +128,34 @@ export default async function AmigosPage({
                     </p>
                   </div>
                 </div>
+
+                {prog && prog.total > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-baseline justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        Avance
+                      </span>
+                      <span className="font-mono tabular font-semibold text-[var(--panini-blue)]">
+                        {prog.percent}%
+                        <span className="text-muted-foreground font-normal ml-1">
+                          ({prog.owned}/{prog.total})
+                        </span>
+                      </span>
+                    </div>
+                    <div
+                      className="h-1.5 rounded-full bg-muted overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={prog.percent}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
+                      <div
+                        className="h-full bg-[var(--panini-blue)] transition-all"
+                        style={{ width: `${prog.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </Link>
             </li>
           );

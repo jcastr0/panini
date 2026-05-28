@@ -148,6 +148,7 @@ export default async function PublicSpecialSectionPage({
           pages={pages}
           qtyMap={qtyMap}
           pageTitles={pageTitles}
+          sectionKey={section}
           readOnly
         />
       </div>

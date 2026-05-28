@@ -75,6 +75,7 @@ export function SpecialSectionPage({
         pages={pages}
         qtyMap={qtyMap}
         pageTitles={pageTitles}
+        sectionKey={sectionKey}
       />
 
       <SectionFooterNav prev={prev} next={next} />

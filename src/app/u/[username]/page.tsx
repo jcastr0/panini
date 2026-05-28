@@ -2,11 +2,36 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getActiveAlbum, getAllSectionStats } from "@/lib/queries";
+import {
+  getActiveAlbum,
+  getAllSectionStats,
+  getLastActivity,
+} from "@/lib/queries";
 import { SECTION_ORDER } from "@/lib/album-config";
 import { SectionTile } from "@/app/(app)/album/_components/section-tile";
 import { ProgressRing } from "@/app/(app)/album/_components/progress-ring";
 import { AlbumOwnerTag } from "@/app/(app)/album/_components/album-owner-tag";
+
+/**
+ * Texto humano para "hace X tiempo" desde una fecha pasada.
+ * "ahora", "hace N min", "hace N h", "hace N días", "hace N sem", "hace N meses".
+ */
+function relativeAgo(date: Date): string {
+  const diffSec = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (diffSec < 60) return "hace un momento";
+  const min = Math.floor(diffSec / 60);
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `hace ${d} día${d === 1 ? "" : "s"}`;
+  const w = Math.floor(d / 7);
+  if (w < 4) return `hace ${w} sem`;
+  const mo = Math.floor(d / 30);
+  if (mo < 12) return `hace ${mo} mes${mo === 1 ? "" : "es"}`;
+  const y = Math.floor(d / 365);
+  return `hace ${y} año${y === 1 ? "" : "s"}`;
+}
 
 export default async function PublicProfilePage({
   params,
@@ -33,7 +58,10 @@ export default async function PublicProfilePage({
   if (!album) return <p>No hay álbum activo.</p>;
 
   // Reusamos getAllSectionStats con el ID del dueño del álbum visto
-  const sectionStats = await getAllSectionStats(profile.id, album.id);
+  const [sectionStats, lastActivity] = await Promise.all([
+    getAllSectionStats(profile.id, album.id),
+    getLastActivity(profile.id),
+  ]);
 
   let total = 0;
   let owned = 0;
@@ -84,6 +112,22 @@ export default async function PublicProfilePage({
               {[profile.city, profile.country].filter(Boolean).join(" · ") ||
                 "Coleccionista del Mundial 2026"}
             </p>
+            {lastActivity && (
+              <p className="text-xs text-muted-foreground">
+                <span
+                  className="inline-block size-1.5 rounded-full bg-[var(--pitch)] mr-1.5 align-middle"
+                  aria-hidden
+                />
+                Última actividad{" "}
+                <time
+                  dateTime={lastActivity.toISOString()}
+                  title={lastActivity.toLocaleString("es-CO")}
+                  className="font-medium text-foreground/80"
+                >
+                  {relativeAgo(lastActivity)}
+                </time>
+              </p>
+            )}
 
             <div className="flex flex-wrap gap-2 pt-1">
               {isOwn ? (

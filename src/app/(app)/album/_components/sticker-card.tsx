@@ -27,6 +27,12 @@ type Props = {
   /** Variante ancha (col-span-2). Usado para Team Photo en hoja 2 */
   horizontal?: boolean;
   /**
+   * Variante alta: el cromo ocupa toda la fila (no comparte row con
+   * otros cromos), así que la imagen puede ser más alta. Usado en
+   * Apertura fwc00/fwc3 y en toda la Historia. Solo aplica si `horizontal`.
+   */
+  tall?: boolean;
+  /**
    * Cuando el cromo es parte del trofeo armado, indica qué mitad ocupa.
    * "top": controles arriba, imagen abajo, sin redondeo inferior.
    * "bottom": imagen arriba, controles abajo, sin redondeo superior.
@@ -50,6 +56,7 @@ export function StickerCard({
   type,
   initialQuantity,
   horizontal = false,
+  tall = false,
   trofeoHalf,
   readOnly = false,
 }: Props) {
@@ -166,7 +173,9 @@ export function StickerCard({
             ? "rounded-b rounded-t-none"
             : "rounded",
         horizontal
-          ? "h-16 sm:h-32"
+          ? tall
+            ? "h-40 sm:h-56"
+            : "h-16 sm:h-32"
           : isTrofeoTop || isTrofeoBottom
             ? "h-44 sm:h-48"
             : stickerImage && !imgFailed
