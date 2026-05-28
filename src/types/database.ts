@@ -39,6 +39,7 @@ type StickerRow = {
   rarity: number;
   image_url: string | null;
   page: number | null;
+  linked_sticker_id: string | null;
 };
 type ProfileRow = {
   id: string;
@@ -57,6 +58,7 @@ type UserStickerRow = {
   sticker_id: string;
   quantity: number;
   updated_at: string;
+  display_variant: "normal" | "legend" | null;
 };
 type TradeRow = {
   id: string;
