@@ -303,24 +303,24 @@ export async function getUnreadNotificationsCount(userId: string) {
   return count ?? 0;
 }
 
-/** Últimas N notificaciones del usuario (leídas o no), con joins enriquecidos. */
+/** Últimas N notificaciones del usuario (leídas o no), con joins enriquecidos.
+ *  notifications.from_user es FK a auth.users (no a profiles), por eso hacemos
+ *  los lookups en paralelo y mergeamos en cliente. */
 export async function getRecentNotifications(
   userId: string,
   limit = 10,
 ): Promise<NotificationRow[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data: rowsRaw } = await supabase
     .from("notifications")
-    .select(
-      `id, user_id, kind, trade_id, from_user, sticker_id, read_at, created_at,
-       from_profile:profiles!notifications_from_user_fkey(username, display_name),
-       sticker:stickers(code, name)`,
-    )
+    .select("id, user_id, kind, trade_id, from_user, sticker_id, read_at, created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  type RawRow = {
+  // Los tipos generados aún no conocen from_user/sticker_id (migración 0032);
+  // casteamos hasta regenerar.
+  const rows = (rowsRaw ?? []) as unknown as Array<{
     id: string;
     user_id: string;
     kind: NotificationRow["kind"];
@@ -329,21 +329,39 @@ export async function getRecentNotifications(
     sticker_id: string | null;
     read_at: string | null;
     created_at: string;
-    from_profile: { username: string | null; display_name: string | null } | null;
-    sticker: { code: string | null; name: string | null } | null;
-  };
-  return ((data ?? []) as unknown as RawRow[]).map((n) => ({
-    id: n.id,
-    user_id: n.user_id,
-    kind: n.kind,
-    trade_id: n.trade_id,
-    from_user: n.from_user,
-    sticker_id: n.sticker_id,
-    read_at: n.read_at,
-    created_at: n.created_at,
-    from_username: n.from_profile?.username ?? null,
-    from_display_name: n.from_profile?.display_name ?? null,
-    sticker_code: n.sticker?.code ?? null,
-    sticker_name: n.sticker?.name ?? null,
-  }));
+  }>;
+  if (rows.length === 0) return [];
+
+  const fromUserIds = [...new Set(rows.map((r) => r.from_user).filter(Boolean))] as string[];
+  const stickerIds = [...new Set(rows.map((r) => r.sticker_id).filter(Boolean))] as string[];
+
+  const [{ data: profiles }, { data: stickers }] = await Promise.all([
+    fromUserIds.length
+      ? supabase
+          .from("profiles")
+          .select("id, username, display_name")
+          .in("id", fromUserIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; username: string | null; display_name: string | null }> }),
+    stickerIds.length
+      ? supabase
+          .from("stickers")
+          .select("id, code, name")
+          .in("id", stickerIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; code: string | null; name: string | null }> }),
+  ]);
+
+  const pMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+  const sMap = new Map((stickers ?? []).map((s) => [s.id, s]));
+
+  return rows.map((n) => {
+    const p = n.from_user ? pMap.get(n.from_user) : null;
+    const s = n.sticker_id ? sMap.get(n.sticker_id) : null;
+    return {
+      ...n,
+      from_username: p?.username ?? null,
+      from_display_name: p?.display_name ?? null,
+      sticker_code: s?.code ?? null,
+      sticker_name: s?.name ?? null,
+    } as NotificationRow;
+  });
 }
