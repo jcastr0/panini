@@ -159,7 +159,7 @@ function TabBody({
   // Agrupar por sección manteniendo el orden de SECTION_ORDER
   const grouped = new Map<GroupCode | SpecialKey, CollectionSticker[]>();
   stickers.forEach((s) => {
-    const key = resolveSectionKey(s.group_code, s.page);
+    const key = resolveSectionKey(s.group_code, s.page, s.type);
     if (key === "other") return;
     const k = key as GroupCode | SpecialKey;
     if (!grouped.has(k)) grouped.set(k, []);

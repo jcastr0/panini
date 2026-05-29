@@ -233,13 +233,13 @@ export function sectionKey(
   return "other";
 }
 
-/** Orden de las 16 secciones para el índice */
+/** Orden de las 16 secciones para el índice. Legends va al final (extras). */
 export const SECTION_ORDER: Array<GroupCode | SpecialKey> = [
   "apertura",
   ...GROUP_CODES,
   "historia",
-  "legends",
   "coca-cola",
+  "legends",
 ];
 
 export function sectionHref(key: GroupCode | SpecialKey): string {
