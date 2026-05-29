@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   getActiveAlbum,
@@ -14,6 +14,7 @@ import {
   TEAM_PALETTES,
   type GroupCode,
 } from "@/lib/album-config";
+import { SectionHero } from "@/app/(app)/album/_components/section-hero";
 import {
   TeamBlock,
   type SectionSticker,
@@ -38,10 +39,17 @@ export default async function PublicGroupPage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, is_public_profile")
+    .select("id, username, display_name, avatar_url, collector_card_base64, is_public_profile")
     .eq("username", username)
     .maybeSingle();
   if (!profile || !profile.is_public_profile) notFound();
+
+  const ownerProps = {
+    username: profile.username,
+    displayName: profile.display_name ?? null,
+    collectorCardBase64: profile.collector_card_base64 ?? null,
+    avatarUrl: profile.avatar_url ?? null,
+  };
 
   const album = await getActiveAlbum();
   if (!album) return <p>No hay álbum activo.</p>;
@@ -147,58 +155,18 @@ export default async function PublicGroupPage({
         } as React.CSSProperties
       }
     >
-      <section
-        className="-mx-6 px-6 py-8 sm:py-10 rounded-b-3xl border-b"
-        style={{ backgroundColor: palette.tint }}
-      >
-        <div className="max-w-6xl mx-auto space-y-5">
-          <Link
-            href={`/u/${username}`}
-            className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur border px-4 h-10 text-sm font-medium hover:bg-card transition-colors"
-          >
-            <ArrowLeft className="size-4" /> Perfil de {ownerDisplay}
-          </Link>
-
-          <div className="space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Álbum de @{profile.username}
-            </span>
-            <div
-              className="font-display font-bold leading-[0.85] tracking-tighter"
-              style={{
-                color: palette.accent,
-                fontSize: "clamp(4rem, 18vw, 11rem)",
-              }}
-            >
-              {code}
-            </div>
-            <p className="text-muted-foreground text-sm">
-              Grupo {code} · {GROUP_PALETTES[code].tag}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span
-              className="font-display text-2xl sm:text-3xl font-bold tabular"
-              style={{ color: palette.accent }}
-            >
-              {groupPercent}%
-            </span>
-            <div className="flex-1 h-2.5 rounded-full bg-background/60 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${groupPercent}%`,
-                  backgroundColor: palette.accent,
-                }}
-              />
-            </div>
-            <span className="font-mono tabular text-sm text-muted-foreground">
-              {groupOwned}/{groupTotal}
-            </span>
-          </div>
-        </div>
-      </section>
+      <SectionHero
+        accent={palette.accent}
+        tint={palette.tint}
+        badge={`Álbum de @${profile.username}`}
+        letter={code}
+        subtitle={`Grupo ${code} · ${GROUP_PALETTES[code].tag}`}
+        owned={groupOwned}
+        total={groupTotal}
+        ownerProps={ownerProps}
+        backHref={`/u/${username}`}
+        backLabel={`Perfil de ${ownerDisplay}`}
+      />
 
       <nav
         className="grid grid-cols-2 sm:grid-cols-4 gap-2"

@@ -1,12 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveAlbum, getStickersBySection, paginate } from "@/lib/queries";
 import { SPECIAL_SECTIONS, type SpecialKey } from "@/lib/album-config";
 import { Fwc2026Icon } from "@/components/icons/Fwc2026Icon";
 import { Fwc2026EmblemIcon } from "@/components/icons/Fwc2026EmblemIcon";
 import { CocaColaIcon } from "@/components/icons/CocaColaIcon";
+import { SectionHero } from "@/app/(app)/album/_components/section-hero";
 import { SpecialSection } from "@/app/(app)/album/_components/special-section";
 import type { SectionSticker } from "@/app/(app)/album/_components/team-block";
 
@@ -69,10 +68,17 @@ export default async function PublicSpecialSectionPage({
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, is_public_profile")
+    .select("id, username, display_name, avatar_url, collector_card_base64, is_public_profile")
     .eq("username", username)
     .maybeSingle();
   if (!profile || !profile.is_public_profile) notFound();
+
+  const ownerProps = {
+    username: profile.username,
+    displayName: profile.display_name ?? null,
+    collectorCardBase64: profile.collector_card_base64 ?? null,
+    avatarUrl: profile.avatar_url ?? null,
+  };
 
   const album = await getActiveAlbum();
   if (!album) return <p>No hay álbum activo.</p>;
@@ -96,7 +102,6 @@ export default async function PublicSpecialSectionPage({
   const special = SPECIAL_SECTIONS[section];
   const total = stickers.length;
   const owned = stickers.filter((s) => (qtyMap.get(s.id) ?? 0) >= 1).length;
-  const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
 
   // Agrupar por página
   const byPage = new Map<number, SectionSticker[]>();
@@ -113,73 +118,34 @@ export default async function PublicSpecialSectionPage({
   const ownerDisplay = profile.display_name ?? `@${profile.username}`;
 
   return (
-    <div className="space-y-8">
-      <section
-        className="-mx-6 px-6 py-8 sm:py-10 rounded-b-3xl border-b"
-        style={{ backgroundColor: special.tint }}
-      >
-        <div className="max-w-6xl mx-auto space-y-5">
-          <Link
-            href={`/u/${username}`}
-            className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur border px-4 h-10 text-sm font-medium hover:bg-card transition-colors"
-          >
-            <ArrowLeft className="size-4" /> Perfil de {ownerDisplay}
-          </Link>
+    <div
+      className="space-y-8"
+      style={
+        {
+          "--accent-section": special.accent,
+          "--tint-section": special.tint,
+        } as React.CSSProperties
+      }
+    >
+      <SectionHero
+        accent={special.accent}
+        tint={special.tint}
+        badge={`Álbum de @${profile.username}`}
+        letter={SECTION_ICONS[section as SpecialKey]}
+        owned={owned}
+        total={total}
+        ownerProps={ownerProps}
+        backHref={`/u/${username}`}
+        backLabel={`Perfil de ${ownerDisplay}`}
+      />
 
-          <div className="space-y-1">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Álbum de @{profile.username}
-            </span>
-            <div
-              className="font-display font-bold leading-none tracking-tighter"
-              style={{
-                color: special.accent,
-                fontSize: "clamp(2.5rem, 8vw, 4.5rem)",
-              }}
-            >
-              {SECTION_ICONS[section as SpecialKey]}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span
-              className="font-display text-2xl sm:text-3xl font-bold tabular"
-              style={{ color: special.accent }}
-            >
-              {percent}%
-            </span>
-            <div className="flex-1 h-2.5 rounded-full bg-background/60 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${percent}%`,
-                  backgroundColor: special.accent,
-                }}
-              />
-            </div>
-            <span className="font-mono tabular text-sm text-muted-foreground">
-              {owned}/{total}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <div
-        style={
-          {
-            "--accent-section": special.accent,
-            "--tint-section": special.tint,
-          } as React.CSSProperties
-        }
-      >
-        <SpecialSection
-          pages={pages}
-          qtyMap={qtyMap}
-          pageTitles={pageTitles}
-          sectionKey={section}
-          readOnly
-        />
-      </div>
+      <SpecialSection
+        pages={pages}
+        qtyMap={qtyMap}
+        pageTitles={pageTitles}
+        sectionKey={section}
+        readOnly
+      />
 
       <p className="text-xs text-muted-foreground italic text-center">
         Vista de solo lectura · este es el álbum de @{profile.username}.

@@ -12,6 +12,8 @@ export function SectionHero({
   total,
   context,
   ownerProps,
+  backHref = "/album",
+  backLabel = "Mi álbum",
 }: {
   accent: string;
   tint: string;
@@ -31,6 +33,9 @@ export function SectionHero({
     collectorCardBase64: string | null;
     avatarUrl: string | null;
   };
+  /** Link de regreso (default: /album). Personalízalo en vistas /u/:username/... */
+  backHref?: string;
+  backLabel?: string;
 }) {
   const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
   const cardSrc = ownerProps.collectorCardBase64
@@ -50,10 +55,10 @@ export function SectionHero({
       <div className="max-w-6xl mx-auto space-y-6">
         <div>
           <Link
-            href="/album"
+            href={backHref}
             className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur border px-4 h-10 text-sm font-medium hover:bg-card transition-colors"
           >
-            <ArrowLeft className="size-4" /> Mi álbum
+            <ArrowLeft className="size-4" /> {backLabel}
           </Link>
         </div>
 
