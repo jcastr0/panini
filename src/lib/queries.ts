@@ -267,3 +267,83 @@ export async function getAllSectionStats(userId: string, albumId: string) {
 
   return stats;
 }
+
+/** Tipo de cada notification — con joins ad-hoc para duplicate_available. */
+export type NotificationRow = {
+  id: string;
+  user_id: string;
+  kind:
+    | "trade_received"
+    | "trade_accepted"
+    | "trade_rejected"
+    | "trade_completed"
+    | "trade_superseded"
+    | "trade_cancelled"
+    | "duplicate_available";
+  trade_id: string | null;
+  from_user: string | null;
+  sticker_id: string | null;
+  read_at: string | null;
+  created_at: string;
+  // Campos enriquecidos
+  from_username?: string | null;
+  from_display_name?: string | null;
+  sticker_code?: string | null;
+  sticker_name?: string | null;
+};
+
+/** Cuenta de notificaciones sin leer. Una sola query con head:true. */
+export async function getUnreadNotificationsCount(userId: string) {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .is("read_at", null);
+  return count ?? 0;
+}
+
+/** Últimas N notificaciones del usuario (leídas o no), con joins enriquecidos. */
+export async function getRecentNotifications(
+  userId: string,
+  limit = 10,
+): Promise<NotificationRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("notifications")
+    .select(
+      `id, user_id, kind, trade_id, from_user, sticker_id, read_at, created_at,
+       from_profile:profiles!notifications_from_user_fkey(username, display_name),
+       sticker:stickers(code, name)`,
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  type RawRow = {
+    id: string;
+    user_id: string;
+    kind: NotificationRow["kind"];
+    trade_id: string | null;
+    from_user: string | null;
+    sticker_id: string | null;
+    read_at: string | null;
+    created_at: string;
+    from_profile: { username: string | null; display_name: string | null } | null;
+    sticker: { code: string | null; name: string | null } | null;
+  };
+  return ((data ?? []) as unknown as RawRow[]).map((n) => ({
+    id: n.id,
+    user_id: n.user_id,
+    kind: n.kind,
+    trade_id: n.trade_id,
+    from_user: n.from_user,
+    sticker_id: n.sticker_id,
+    read_at: n.read_at,
+    created_at: n.created_at,
+    from_username: n.from_profile?.username ?? null,
+    from_display_name: n.from_profile?.display_name ?? null,
+    sticker_code: n.sticker?.code ?? null,
+    sticker_name: n.sticker?.name ?? null,
+  }));
+}

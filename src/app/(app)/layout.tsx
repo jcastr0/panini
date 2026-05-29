@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { UserMenu } from "./_components/user-menu";
 import { MobileTabBar } from "./_components/mobile-tab-bar";
+import { NotificationBell } from "./_components/notification-bell";
 
 export default async function AppLayout({
   children,
@@ -61,13 +62,16 @@ export default async function AppLayout({
               <NavLink href="/amigos">Amigos</NavLink>
             </nav>
           </div>
-          <UserMenu
-            email={user.email ?? ""}
-            username={profile?.username ?? ""}
-            displayName={profile?.display_name ?? null}
-            avatarUrl={profile?.avatar_url ?? null}
-            collectorCardBase64={profile?.collector_card_base64 ?? null}
-          />
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <UserMenu
+              email={user.email ?? ""}
+              username={profile?.username ?? ""}
+              displayName={profile?.display_name ?? null}
+              avatarUrl={profile?.avatar_url ?? null}
+              collectorCardBase64={profile?.collector_card_base64 ?? null}
+            />
+          </div>
         </div>
       </header>
       <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full pb-24 md:pb-8">
