@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import { HelpCircle, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -59,6 +59,9 @@ export function UserMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/profile")}>
           <User className="mr-2 size-4" /> Mi perfil
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/manual")}>
+          <HelpCircle className="mr-2 size-4" /> Ayuda
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
