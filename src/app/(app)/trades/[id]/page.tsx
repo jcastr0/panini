@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { stickerImagePath } from "@/lib/sticker-image";
 import { TradeActions } from "./_components/trade-actions";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -40,7 +41,7 @@ export default async function TradeDetailPage({
     supabase
       .from("trade_items")
       .select(
-        "id, direction, quantity, sticker_id, stickers(number, name, team, type)",
+        "id, direction, quantity, sticker_id, stickers(code, number, name, team, type)",
       )
       .eq("trade_id", id),
     supabase
@@ -123,6 +124,7 @@ function Column({
     quantity: number;
     stickers:
       | {
+          code: string | null;
           number: number;
           name: string;
           team: string | null;
@@ -139,33 +141,61 @@ function Column({
         <h2 className="font-display text-xl font-semibold mb-4 tracking-tight">
           {title}
         </h2>
-        <ul className="divide-y border rounded-md">
-          {items.length === 0 && (
-            <li className="p-4 text-sm text-muted-foreground text-center">
-              Nada en esta dirección.
-            </li>
-          )}
-          {items.map((it) => (
-            <li key={it.id} className="p-3 flex items-center gap-3">
-              <span className="font-mono text-xs text-muted-foreground tabular w-12">
-                #{String(it.stickers?.number ?? 0).padStart(3, "0")}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {it.stickers?.team ?? it.stickers?.name}
-                </p>
-                {it.stickers?.team && it.stickers.team !== it.stickers.name && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {it.stickers.name}
-                  </p>
-                )}
-              </div>
-              <span className="font-display text-lg font-bold tabular">
-                ×{it.quantity}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {items.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground text-center border rounded-md">
+            Nada en esta dirección.
+          </p>
+        ) : (
+          <ul className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {items.map((it) => {
+              const img = stickerImagePath(it.stickers?.code);
+              const isHorizontal =
+                it.stickers?.code === "0" ||
+                it.stickers?.code === "00" ||
+                it.stickers?.code === "3";
+              return (
+                <li
+                  key={it.id}
+                  className="relative rounded-lg overflow-hidden border bg-muted/30 group"
+                >
+                  <div
+                    className="relative w-full"
+                    style={{ aspectRatio: isHorizontal ? "4/3" : "3/4" }}
+                  >
+                    {img ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={img}
+                        alt={it.stickers?.name ?? ""}
+                        className="absolute inset-0 size-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 grid place-items-center p-1 text-center">
+                        <span className="font-mono text-[10px] text-muted-foreground">
+                          {it.stickers?.code ?? `#${it.stickers?.number}`}
+                        </span>
+                      </div>
+                    )}
+                    {it.quantity > 1 && (
+                      <span className="absolute top-1 right-1 size-5 grid place-items-center rounded-full text-[10px] font-bold bg-foreground text-background ring-2 ring-card">
+                        {it.quantity}
+                      </span>
+                    )}
+                  </div>
+                  <div className="px-1.5 py-1 border-t bg-card">
+                    <p className="text-[10px] font-mono text-muted-foreground truncate">
+                      {it.stickers?.code ?? `#${it.stickers?.number}`}
+                    </p>
+                    <p className="text-[11px] font-medium truncate leading-tight">
+                      {it.stickers?.team ?? it.stickers?.name}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );

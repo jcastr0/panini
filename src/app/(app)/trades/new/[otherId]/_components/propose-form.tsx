@@ -6,10 +6,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { stickerImagePath } from "@/lib/sticker-image";
 import { createTrade } from "../../../actions";
 
 type Sticker = {
   id: string;
+  code: string | null;
   number: number;
   name: string;
   team: string | null;
@@ -245,28 +247,43 @@ function StickerPicker({
         const qty = selected[s.id] ?? 0;
         const max = maxFor(s);
         const shiny = s.type === "shiny" || s.type === "legend";
+        const img = stickerImagePath(s.code);
         return (
           <li
             key={s.id}
-            className="p-3 flex items-center gap-3 hover:bg-muted/40"
+            className={cn(
+              "p-3 flex items-center gap-3 hover:bg-muted/40 transition-colors",
+              qty > 0 && "bg-[var(--panini-blue)]/5",
+            )}
           >
-            <span className="font-mono text-xs text-muted-foreground tabular w-12">
-              #{String(s.number).padStart(3, "0")}
-            </span>
+            <div className="size-12 rounded-md overflow-hidden bg-muted shrink-0 grid place-items-center ring-1 ring-border">
+              {img ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={img}
+                  alt=""
+                  className="size-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {s.code ?? `#${s.number}`}
+                </span>
+              )}
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate flex items-center gap-1">
                 {s.team ?? s.name}
                 {shiny && (
-                  <Sparkles className="size-3 text-[var(--gold)]" />
+                  <Sparkles className="size-3 text-[var(--gold)] shrink-0" />
                 )}
               </p>
-              {s.team && s.team !== s.name && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {s.name}
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground truncate font-mono">
+                {s.code ?? `#${String(s.number).padStart(3, "0")}`}
+                {s.team && s.team !== s.name && ` · ${s.name}`}
+              </p>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
                 onClick={() => onAdjust(s.id, max, -1)}

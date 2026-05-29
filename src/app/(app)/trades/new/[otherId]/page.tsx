@@ -5,6 +5,7 @@ import { ProposeForm } from "./_components/propose-form";
 
 type Sticker = {
   id: string;
+  code: string | null;
   number: number;
   name: string;
   team: string | null;
@@ -38,7 +39,7 @@ export default async function NewTradeWithUser({
       paginate<Sticker>((from, to) =>
         supabase
           .from("stickers")
-          .select("id, number, name, team, group_code, type")
+          .select("id, code, number, name, team, group_code, type")
           .eq("album_id", album.id)
           .order("number", { ascending: true })
           .range(from, to),
