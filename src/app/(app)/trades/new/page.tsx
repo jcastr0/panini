@@ -4,9 +4,7 @@ import { ArrowUpRight, Repeat } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { paginate } from "@/lib/queries";
-import { stickerImagePath } from "@/lib/sticker-image";
-
-const PREVIEW_PER_DIR = 4;
+import { PreviewBox } from "./_components/preview-box";
 
 export default async function NewTradePage() {
   const supabase = await createClient();
@@ -74,15 +72,13 @@ export default async function NewTradePage() {
     .map(([id]) => id);
 
   function previewsFor(otherId: string) {
-    // they_offer: sus repetidos que a mí me faltan
-    const theyOfferIds = (theirDupesByUser.get(otherId) ?? [])
-      .filter((sid) => (myHas.get(sid) ?? 0) === 0)
-      .slice(0, PREVIEW_PER_DIR);
-    // i_offer: mis repetidos que a ellos les faltan
+    // they_offer: sus repetidos que a mí me faltan (todos)
+    const theyOfferIds = (theirDupesByUser.get(otherId) ?? []).filter(
+      (sid) => (myHas.get(sid) ?? 0) === 0,
+    );
+    // i_offer: mis repetidos que a ellos les faltan (todos)
     const theirOwned = theirOwnedByUser.get(otherId) ?? new Set();
-    const iOfferIds = myDupes
-      .filter((sid) => !theirOwned.has(sid))
-      .slice(0, PREVIEW_PER_DIR);
+    const iOfferIds = myDupes.filter((sid) => !theirOwned.has(sid));
     return {
       theyOffer: theyOfferIds.map((id) => stickerById.get(id)).filter(Boolean) as Array<{
         id: string;
@@ -169,19 +165,19 @@ export default async function NewTradePage() {
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <PreviewBox
                   label="Te ofrecen"
-                  count={m.they_offer_count}
+                  total={m.they_offer_count}
                   items={previewsFor(m.other_user).theyOffer}
                   bg="oklab,var(--card),var(--panini-blue)_8%"
                   border="oklab,var(--panini-blue)_30%,transparent"
-                  extra={Math.max(0, m.they_offer_count - PREVIEW_PER_DIR)}
+                  otherDisplayName={m.display_name || `@${m.username}`}
                 />
                 <PreviewBox
                   label="Tú ofreces"
-                  count={m.i_offer_count}
+                  total={m.i_offer_count}
                   items={previewsFor(m.other_user).iOffer}
                   bg="oklab,var(--card),var(--gold)_10%"
                   border="oklab,var(--gold)_40%,transparent"
-                  extra={Math.max(0, m.i_offer_count - PREVIEW_PER_DIR)}
+                  otherDisplayName={m.display_name || `@${m.username}`}
                 />
               </div>
               <Button asChild className="self-end mt-1">
@@ -197,75 +193,3 @@ export default async function NewTradePage() {
   );
 }
 
-function PreviewBox({
-  label,
-  count,
-  items,
-  bg,
-  border,
-  extra,
-}: {
-  label: string;
-  count: number;
-  items: Array<{ id: string; code: string | null; name: string; team: string | null }>;
-  bg: string;
-  border: string;
-  extra: number;
-}) {
-  return (
-    <div
-      className="rounded-md p-2.5 border space-y-2"
-      style={{
-        backgroundColor: `color-mix(in ${bg})`,
-        borderColor: `color-mix(in ${border})`,
-      }}
-    >
-      <div className="flex items-baseline justify-between">
-        <p className="eyebrow">{label}</p>
-        <p className="font-display text-base font-bold tabular">{count}</p>
-      </div>
-      {items.length > 0 ? (
-        <div className="grid grid-cols-4 gap-1">
-          {items.map((s) => {
-            const img = stickerImagePath(s.code);
-            return (
-              <div
-                key={s.id}
-                title={`${s.code ?? ""} · ${s.team ?? s.name}`}
-                className="relative aspect-[3/4] rounded overflow-hidden bg-muted ring-1 ring-border"
-              >
-                {img ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={img}
-                    alt=""
-                    loading="lazy"
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <div className="size-full grid place-items-center">
-                    <span className="font-mono text-[7px] text-muted-foreground">
-                      {s.code}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          {extra > 0 && (
-            <div
-              className="aspect-[3/4] rounded bg-card ring-1 ring-border grid place-items-center"
-              title={`+${extra} cromos más`}
-            >
-              <span className="font-mono text-[11px] font-semibold tabular text-muted-foreground">
-                +{extra}
-              </span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <p className="text-[11px] text-muted-foreground italic">Sin previa</p>
-      )}
-    </div>
-  );
-}
