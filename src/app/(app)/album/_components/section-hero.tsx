@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { CollectorCardLightbox } from "./collector-card-lightbox";
 
 export function SectionHero({
   accent,
@@ -95,35 +96,13 @@ export function SectionHero({
             )}
           </div>
 
-          <div className="flex flex-col items-center gap-1.5 sm:gap-2 shrink-0">
-            <div
-              className="relative w-20 sm:w-24 lg:w-28 aspect-[3/4] rounded-lg overflow-hidden ring-2 shadow-lg"
-              style={{
-                borderColor: accent,
-                boxShadow: `0 8px 20px -8px ${accent}55`,
-              }}
-            >
-              {cardSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={cardSrc}
-                  alt={`Lámina de @${ownerProps.username}`}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <div className="size-full bg-card grid place-items-center text-xl font-bold text-muted-foreground">
-                  {initials || "?"}
-                </div>
-              )}
-            </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground text-center leading-tight max-w-[6rem] sm:max-w-[7rem]">
-              Álbum de
-              <br />
-              <span className="font-semibold text-foreground">
-                @{ownerProps.username || "tu"}
-              </span>
-            </p>
-          </div>
+          <CollectorCardLightbox
+            cardSrc={cardSrc}
+            initials={initials}
+            username={ownerProps.username}
+            displayName={ownerProps.displayName}
+            accent={accent}
+          />
         </div>
 
         <div className="space-y-1.5">
