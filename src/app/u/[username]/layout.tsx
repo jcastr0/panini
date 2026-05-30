@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { UserMenu } from "@/app/(app)/_components/user-menu";
 import { MobileTabBar } from "@/app/(app)/_components/mobile-tab-bar";
 import { NotificationBell } from "@/app/(app)/_components/notification-bell";
+import { AppFooter, AppFooterMobile } from "@/app/(app)/_components/app-footer";
+import { SupportButton } from "@/app/(app)/_components/support-button";
 
 export default async function PublicLayout({
   children,
@@ -78,7 +80,9 @@ export default async function PublicLayout({
         </header>
         <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full pb-24 md:pb-8">
           {children}
+          <AppFooterMobile />
         </main>
+        <AppFooter />
         <MobileTabBar pendingTrades={pendingTrades ?? 0} />
       </div>
     );
@@ -119,8 +123,11 @@ export default async function PublicLayout({
       <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full">
         {children}
       </main>
-      <footer className="border-t py-6 text-center text-xs text-muted-foreground">
-        Panini·JD · Proyecto independiente, no afiliado a Panini Group
+      <footer className="border-t py-6 px-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap text-xs text-muted-foreground">
+          <p>Panini·JD · Proyecto independiente, no afiliado a Panini Group</p>
+          <SupportButton />
+        </div>
       </footer>
     </div>
   );

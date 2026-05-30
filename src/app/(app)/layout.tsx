@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { UserMenu } from "./_components/user-menu";
 import { MobileTabBar } from "./_components/mobile-tab-bar";
 import { NotificationBell } from "./_components/notification-bell";
+import { AppFooter, AppFooterMobile } from "./_components/app-footer";
 
 export default async function AppLayout({
   children,
@@ -76,7 +77,9 @@ export default async function AppLayout({
       </header>
       <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full pb-24 md:pb-8">
         {children}
+        <AppFooterMobile />
       </main>
+      <AppFooter />
       <MobileTabBar pendingTrades={pendingTrades ?? 0} />
     </div>
   );
