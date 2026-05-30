@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { Coffee, Copy, ExternalLink, Heart, X } from "lucide-react";
+import { Coffee, Copy, ExternalLink, Heart, X, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -99,15 +99,11 @@ export function SupportButton() {
                 </span>
               </div>
               <div className="rounded-xl border bg-muted/30 p-3 flex gap-3 items-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/support/breb-qr.jpg"
-                  alt="QR de pago Bre-b"
-                  className="size-24 rounded-md ring-1 ring-border shrink-0 object-cover"
-                />
+                <BrebQrZoom />
                 <div className="min-w-0 flex-1 space-y-2">
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Escanea el QR desde tu app del banco o paga con la llave:
+                    Toca el QR para verlo grande y escanearlo, o paga con la
+                    llave:
                   </p>
                   <button
                     type="button"
@@ -163,6 +159,91 @@ export function SupportButton() {
             <p className="text-[11px] text-muted-foreground italic text-center pt-1">
               No es obligatorio. Pero cada cafecito ayuda 💛
             </p>
+          </div>
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
+  );
+}
+
+/** QR en miniatura que abre un lightbox grande para escanear desde otro celular. */
+function BrebQrZoom() {
+  return (
+    <DialogPrimitive.Root>
+      <DialogPrimitive.Trigger
+        render={
+          <button
+            type="button"
+            aria-label="Ver QR en grande"
+            className="relative shrink-0 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/support/breb-qr.jpg"
+              alt="QR de pago Bre-b"
+              className="size-24 rounded-md ring-1 ring-border object-cover transition-transform group-hover:scale-105 group-active:scale-95"
+            />
+            <span className="absolute bottom-1 right-1 size-5 rounded-full grid place-items-center bg-foreground/85 text-background opacity-0 group-hover:opacity-100 transition-opacity">
+              <ZoomIn className="size-3" />
+            </span>
+          </button>
+        }
+      />
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop
+          className={cn(
+            "fixed inset-0 z-[60] bg-black/90",
+            "duration-200",
+            "data-open:animate-in data-open:fade-in-0",
+            "data-closed:animate-out data-closed:fade-out-0",
+          )}
+        />
+        <DialogPrimitive.Popup
+          className={cn(
+            "fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2",
+            "w-[min(420px,92vw)] outline-none",
+            "duration-200",
+            "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
+            "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          )}
+        >
+          <DialogPrimitive.Title className="sr-only">
+            QR Bre-b
+          </DialogPrimitive.Title>
+          <DialogPrimitive.Description className="sr-only">
+            Código QR de Bre-b para pago a {BREB_KEY}
+          </DialogPrimitive.Description>
+
+          <div className="relative flex flex-col items-center gap-4">
+            <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-2xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/support/breb-qr.jpg"
+                alt="QR de pago Bre-b"
+                className="block w-full h-auto rounded-lg select-none"
+                draggable={false}
+              />
+            </div>
+            <div className="text-center px-4">
+              <p className="font-mono text-sm text-white/90 font-semibold">
+                {BREB_KEY}
+              </p>
+              <p className="text-xs text-white/60 mt-1">
+                Escanea desde tu app del banco
+              </p>
+            </div>
+            <DialogPrimitive.Close
+              aria-label="Cerrar"
+              className={cn(
+                "absolute -top-3 -right-3 size-10 rounded-full grid place-items-center",
+                "bg-white/10 backdrop-blur-md border border-white/15",
+                "text-white hover:bg-white/20 active:scale-95",
+                "transition-all duration-150",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+              )}
+            >
+              <X className="size-4" />
+            </DialogPrimitive.Close>
           </div>
         </DialogPrimitive.Popup>
       </DialogPrimitive.Portal>
