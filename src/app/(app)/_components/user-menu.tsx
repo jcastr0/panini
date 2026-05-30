@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { HelpCircle, LogOut, User } from "lucide-react";
+import { Heart, HelpCircle, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logoutAction } from "@/app/(auth)/actions";
+import { SupportButton } from "./support-button";
 
 export function UserMenu({
   email,
@@ -28,6 +30,7 @@ export function UserMenu({
   collectorCardBase64: string | null;
 }) {
   const router = useRouter();
+  const [supportOpen, setSupportOpen] = useState(false);
   const initials = (displayName || username || email)
     .split(/\s+|[@._-]/)
     .filter(Boolean)
@@ -40,6 +43,7 @@ export function UserMenu({
     : avatarUrl;
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <Avatar className="size-9">
@@ -63,6 +67,13 @@ export function UserMenu({
         <DropdownMenuItem onClick={() => router.push("/manual")}>
           <HelpCircle className="mr-2 size-4" /> Ayuda
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setSupportOpen(true)}>
+          <Heart
+            className="mr-2 size-4 text-[var(--panini-red)]"
+            fill="currentColor"
+          />{" "}
+          Apoya el proyecto
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {
@@ -73,5 +84,7 @@ export function UserMenu({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    <SupportButton open={supportOpen} onOpenChange={setSupportOpen} />
+    </>
   );
 }

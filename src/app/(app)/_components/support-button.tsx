@@ -13,9 +13,20 @@ const BREB_KEY = "@jhonatan9365";
  * Botón discreto para apoyar el proyecto. Abre un dialog con:
  *   - PayPal (paypal.me link directo)
  *   - Bre-b (Bancolombia) con QR + llave copiable
+ *
+ * Sin props: trigger default = el corazón con texto "Apoya el proyecto"
+ * Con open/onOpenChange: controlado externamente (ej. desde UserMenu),
+ *   sin renderizar el trigger interno.
  */
-export function SupportButton() {
+export function SupportButton({
+  open,
+  onOpenChange,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+} = {}) {
   const [copied, setCopied] = React.useState(false);
+  const controlled = open !== undefined;
 
   async function copyKey() {
     try {
@@ -29,22 +40,24 @@ export function SupportButton() {
   }
 
   return (
-    <DialogPrimitive.Root>
-      <DialogPrimitive.Trigger
-        render={
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
-            aria-label="Apoyar el proyecto"
-          >
-            <Heart
-              className="size-3.5 text-[var(--panini-red)] group-hover:scale-110 transition-transform"
-              fill="currentColor"
-            />
-            Apoya el proyecto
-          </button>
-        }
-      />
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      {!controlled && (
+        <DialogPrimitive.Trigger
+          render={
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+              aria-label="Apoyar el proyecto"
+            >
+              <Heart
+                className="size-3.5 text-[var(--panini-red)] group-hover:scale-110 transition-transform"
+                fill="currentColor"
+              />
+              Apoya el proyecto
+            </button>
+          }
+        />
+      )}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop
           className={cn(
