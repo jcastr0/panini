@@ -72,7 +72,7 @@ export function UserMenu({
             className="mr-2 size-4 text-[var(--panini-red)]"
             fill="currentColor"
           />{" "}
-          Apoya el proyecto
+          Apóyanos
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
