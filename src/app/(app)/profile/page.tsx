@@ -37,7 +37,7 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="space-y-8 max-w-xl">
+    <div className="space-y-8 max-w-xl md:max-w-3xl">
       <header className="space-y-3">
         <span className="eyebrow">Cuenta</span>
         <h1 className="font-display text-4xl font-bold tracking-tight">

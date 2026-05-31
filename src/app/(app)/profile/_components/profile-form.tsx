@@ -41,7 +41,7 @@ export function ProfileForm({
   }, [state.success]);
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="grid gap-5 md:grid-cols-2">
       <div className="space-y-2">
         <Label>Correo</Label>
         <Input value={email} disabled readOnly />
@@ -66,7 +66,7 @@ export function ProfileForm({
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 md:col-span-2">
         <Label htmlFor="display_name">Nombre para mostrar</Label>
         <Input
           id="display_name"
@@ -76,7 +76,7 @@ export function ProfileForm({
         />
       </div>
 
-      <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+      <div className="space-y-3 rounded-xl border bg-muted/30 p-4 md:col-span-2">
         <p className="text-sm font-medium">Ubicación</p>
         <LocationSelector value={location} onChange={setLocation} />
         {/* Hidden inputs para que FormData reciba los valores */}
@@ -85,7 +85,7 @@ export function ProfileForm({
         <input type="hidden" name="city" value={location.city} />
       </div>
 
-      <label className="flex items-start gap-3 cursor-pointer">
+      <label className="flex items-start gap-3 cursor-pointer md:col-span-2">
         <input
           type="checkbox"
           name="is_public_profile"
@@ -102,14 +102,16 @@ export function ProfileForm({
       </label>
 
       {state.error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="md:col-span-2">
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}
 
-      <Button type="submit" disabled={pending} size="lg">
-        {pending ? "Guardando…" : "Guardar perfil"}
-      </Button>
+      <div className="md:col-span-2">
+        <Button type="submit" disabled={pending} size="lg">
+          {pending ? "Guardando…" : "Guardar perfil"}
+        </Button>
+      </div>
     </form>
   );
 }
