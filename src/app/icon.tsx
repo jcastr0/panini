@@ -3,6 +3,10 @@ import { ImageResponse } from "next/og";
 export const size = { width: 512, height: 512 };
 export const contentType = "image/png";
 
+/**
+ * Favicon Panini·JD — diseño que escala bien a 16/32/64 px.
+ * Monograma "JD" sobre fondo azul Panini con punto dorado entre las letras.
+ */
 export default function Icon() {
   return new ImageResponse(
     (
@@ -19,71 +23,41 @@ export default function Icon() {
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
-        {/* Trama sutil de cromo */}
+        {/* Brillo sutil tipo cromo */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             backgroundImage:
-              "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.10), transparent 40%)",
+              "radial-gradient(circle at 28% 22%, rgba(255,255,255,0.18), transparent 45%)",
           }}
         />
 
-        {/* Pelotita arriba a la derecha (guiño de JD) */}
-        <div
-          style={{
-            position: "absolute",
-            top: 50,
-            right: 56,
-            fontSize: 120,
-            lineHeight: 1,
-            filter: "drop-shadow(0 6px 12px rgba(0,0,0,0.35))",
-          }}
-        >
-          ⚽
-        </div>
-
-        {/* Monograma PJ con punto dorado */}
+        {/* Monograma JD con punto dorado */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: 18,
             color: "white",
-            fontSize: 280,
+            fontSize: 320,
             fontWeight: 900,
-            letterSpacing: "-0.04em",
+            letterSpacing: "-0.05em",
             lineHeight: 1,
-            marginTop: 40,
           }}
         >
-          <span>P</span>
+          <span>J</span>
           <span
             style={{
-              width: 28,
-              height: 28,
+              width: 36,
+              height: 36,
               borderRadius: 999,
-              background: "#d4a64a",
-              marginTop: 60,
-              boxShadow: "0 4px 12px rgba(255,200,80,0.5)",
+              background: "#f4c440",
+              marginTop: 80,
+              boxShadow: "0 6px 16px rgba(244,196,64,0.65)",
             }}
           />
-          <span>J</span>
-        </div>
-
-        {/* Eyebrow */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 56,
-            color: "rgba(255,255,255,0.65)",
-            fontSize: 32,
-            fontWeight: 700,
-            letterSpacing: "0.32em",
-            textTransform: "uppercase",
-          }}
-        >
-          Álbum · 2026
+          <span>D</span>
         </div>
       </div>
     ),

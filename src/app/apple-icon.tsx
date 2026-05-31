@@ -3,6 +3,10 @@ import { ImageResponse } from "next/og";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
+/**
+ * Icon iOS — al guardar "Añadir a pantalla de inicio".
+ * Monograma JD + balón pequeño + año, diseñado para 180×180.
+ */
 export default function AppleIcon() {
   return new ImageResponse(
     (
@@ -19,61 +23,71 @@ export default function AppleIcon() {
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
-        {/* Pelotita guiño de JD */}
+        {/* Brillo cromo */}
         <div
           style={{
             position: "absolute",
-            top: 18,
-            right: 20,
-            fontSize: 42,
+            inset: 0,
+            backgroundImage:
+              "radial-gradient(circle at 28% 22%, rgba(255,255,255,0.18), transparent 45%)",
+          }}
+        />
+
+        {/* Balón arriba-derecha */}
+        <div
+          style={{
+            position: "absolute",
+            top: 14,
+            right: 16,
+            fontSize: 38,
             lineHeight: 1,
-            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.35))",
+            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
           }}
         >
           ⚽
         </div>
 
-        {/* Monograma PJ */}
+        {/* Monograma JD */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 3,
+            gap: 6,
             color: "white",
-            fontSize: 100,
+            fontSize: 96,
             fontWeight: 900,
-            letterSpacing: "-0.04em",
+            letterSpacing: "-0.05em",
             lineHeight: 1,
-            marginTop: 14,
+            marginTop: 8,
           }}
         >
-          <span>P</span>
+          <span>J</span>
           <span
             style={{
-              width: 10,
-              height: 10,
+              width: 11,
+              height: 11,
               borderRadius: 999,
-              background: "#d4a64a",
+              background: "#f4c440",
               marginTop: 22,
-              boxShadow: "0 2px 4px rgba(255,200,80,0.5)",
+              boxShadow: "0 2px 5px rgba(244,196,64,0.6)",
             }}
           />
-          <span>J</span>
+          <span>D</span>
         </div>
 
         {/* Eyebrow */}
         <div
           style={{
             position: "absolute",
-            bottom: 18,
-            color: "rgba(255,255,255,0.65)",
+            bottom: 16,
+            color: "rgba(255,255,255,0.7)",
             fontSize: 11,
             fontWeight: 700,
-            letterSpacing: "0.28em",
+            letterSpacing: "0.32em",
             textTransform: "uppercase",
           }}
         >
-          2026
+          Álbum · 2026
         </div>
       </div>
     ),
