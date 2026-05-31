@@ -4,6 +4,7 @@ import { Users, ArrowUpRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./_components/profile-form";
 import { CollectorCardUpload } from "./_components/collector-card-upload";
+import { EmailPreferences } from "./_components/email-preferences";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -12,13 +13,27 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
+  // Los tipos generados aún no conocen email_* (migración 0033); casteamos.
+  const { data: profile } = (await supabase
     .from("profiles")
     .select(
-      "username, display_name, city, country, avatar_url, is_public_profile, collector_card_base64",
+      "username, display_name, city, country, avatar_url, is_public_profile, collector_card_base64, email_trades, email_matches, email_digest",
     )
     .eq("id", user.id)
-    .maybeSingle();
+    .maybeSingle()) as {
+    data: {
+      username: string | null;
+      display_name: string | null;
+      city: string | null;
+      country: string | null;
+      avatar_url: string | null;
+      is_public_profile: boolean | null;
+      collector_card_base64: string | null;
+      email_trades: boolean | null;
+      email_matches: boolean | null;
+      email_digest: boolean | null;
+    } | null;
+  };
 
   return (
     <div className="space-y-8 max-w-xl">
@@ -64,6 +79,15 @@ export default async function ProfilePage() {
         city={profile?.city ?? ""}
         country={profile?.country ?? "Colombia"}
         isPublicProfile={profile?.is_public_profile ?? true}
+      />
+
+      <EmailPreferences
+        email={user.email ?? ""}
+        initial={{
+          trades: profile?.email_trades ?? true,
+          matches: profile?.email_matches ?? true,
+          digest: profile?.email_digest ?? true,
+        }}
       />
     </div>
   );
