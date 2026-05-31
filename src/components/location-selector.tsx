@@ -7,6 +7,15 @@ import {
   DEPARTMENT_NAMES,
   getCitiesOf,
 } from "@/lib/colombia";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export type LocationValue = {
   country: string;
@@ -14,12 +23,13 @@ export type LocationValue = {
   city: string;
 };
 
+const OTRO_CITY = "Otro";
+
 /**
- * Selector de ubicación: si país = Colombia, cascading dropdowns
- * (departamento → ciudad) con opción "Otro municipio" libre.
- * Si país ≠ Colombia, dos inputs libres (país, ciudad).
- *
- * Controlado: el parent gestiona el estado y recibe cambios via onChange.
+ * Selector de ubicación con cascading dropdowns shadcn:
+ *  - País: Colombia / Otro (input libre si "Otro")
+ *  - Si Colombia: Departamento → Municipio (con opción "Otro" libre)
+ *  - Si extranjero: input libre para ciudad
  */
 export function LocationSelector({
   value,
@@ -36,30 +46,40 @@ export function LocationSelector({
   const cities = isColombia && value.department
     ? getCitiesOf(value.department)
     : [];
-  const showCustomCityInput =
-    isColombia && (value.city === "Otro" || (value.city && !cities.includes(value.city) && value.city !== ""));
+  const cityIsCustom =
+    isColombia &&
+    value.department !== null &&
+    value.city !== "" &&
+    !cities.includes(value.city);
   const [customCity, setCustomCity] = React.useState(
-    showCustomCityInput && value.city !== "Otro" ? value.city : "",
+    cityIsCustom ? value.city : "",
   );
+  const [showCustomCity, setShowCustomCity] = React.useState(cityIsCustom);
 
-  function setCountry(next: string) {
+  function setCountrySelection(next: string | null) {
     if (next === "Colombia") {
       onChange({ country: "Colombia", department: null, city: "" });
     } else {
-      onChange({ country: next, department: null, city: "" });
+      onChange({ country: "", department: null, city: "" });
     }
+    setShowCustomCity(false);
+    setCustomCity("");
   }
 
-  function setDepartment(next: string) {
-    onChange({ ...value, department: next || null, city: "" });
+  function setDepartment(next: string | null) {
+    onChange({ ...value, department: next ?? null, city: "" });
+    setShowCustomCity(false);
+    setCustomCity("");
   }
 
-  function setCity(next: string) {
-    if (next === "Otro") {
-      onChange({ ...value, city: "Otro" });
+  function setCity(next: string | null) {
+    if (next === OTRO_CITY) {
+      setShowCustomCity(true);
       setCustomCity("");
+      onChange({ ...value, city: "" });
     } else {
-      onChange({ ...value, city: next });
+      setShowCustomCity(false);
+      onChange({ ...value, city: next ?? "" });
     }
   }
 
@@ -68,31 +88,33 @@ export function LocationSelector({
     onChange({ ...value, city: next });
   }
 
+  // Para el SelectValue del campo ciudad
+  const citySelectValue =
+    !value.city ? "" : cities.includes(value.city) ? value.city : OTRO_CITY;
+
   return (
     <div className="space-y-3">
       {/* País */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium flex items-center gap-1.5">
+        <Label className="flex items-center gap-1.5">
           <Globe className="size-3.5 text-muted-foreground" />
           País {required && <span className="text-[var(--panini-red)]">*</span>}
-        </label>
-        <select
-          value={isColombia ? "Colombia" : value.country || "Colombia"}
-          onChange={(e) => {
-            if (e.target.value === "Otro") {
-              setCountry("");
-            } else {
-              setCountry(e.target.value);
-            }
-          }}
+        </Label>
+        <Select
+          value={isColombia ? "Colombia" : "Otro"}
+          onValueChange={setCountrySelection}
           disabled={disabled}
-          className="w-full h-11 px-3 rounded-lg border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
         >
-          <option value="Colombia">🇨🇴 Colombia</option>
-          <option value="Otro">🌎 Otro país</option>
-        </select>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Selecciona país…" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Colombia">🇨🇴 Colombia</SelectItem>
+            <SelectItem value="Otro">🌎 Otro país</SelectItem>
+          </SelectContent>
+        </Select>
         {!isColombia && (
-          <input
+          <Input
             type="text"
             value={value.country}
             onChange={(e) => onChange({ ...value, country: e.target.value })}
@@ -100,7 +122,6 @@ export function LocationSelector({
             disabled={disabled}
             required={required}
             maxLength={50}
-            className="w-full h-11 px-3 rounded-lg border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           />
         )}
       </div>
@@ -108,56 +129,54 @@ export function LocationSelector({
       {/* Departamento (solo Colombia) */}
       {isColombia && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium flex items-center gap-1.5">
+          <Label className="flex items-center gap-1.5">
             <MapPin className="size-3.5 text-muted-foreground" />
             Departamento {required && <span className="text-[var(--panini-red)]">*</span>}
-          </label>
-          <select
+          </Label>
+          <Select
             value={value.department ?? ""}
-            onChange={(e) => setDepartment(e.target.value)}
+            onValueChange={setDepartment}
             disabled={disabled}
-            required={required}
-            className="w-full h-11 px-3 rounded-lg border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           >
-            <option value="">Selecciona…</option>
-            {DEPARTMENT_NAMES.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Selecciona departamento…" />
+            </SelectTrigger>
+            <SelectContent>
+              {DEPARTMENT_NAMES.map((d) => (
+                <SelectItem key={d} value={d}>{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
       {/* Ciudad */}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium flex items-center gap-1.5">
+        <Label className="flex items-center gap-1.5">
           <MapPin className="size-3.5 text-muted-foreground" />
           {isColombia ? "Municipio" : "Ciudad"} {required && <span className="text-[var(--panini-red)]">*</span>}
-        </label>
+        </Label>
 
         {isColombia ? (
           value.department ? (
             <>
-              <select
-                value={
-                  value.city && cities.includes(value.city)
-                    ? value.city
-                    : value.city === ""
-                      ? ""
-                      : "Otro"
-                }
-                onChange={(e) => setCity(e.target.value)}
+              <Select
+                value={citySelectValue}
+                onValueChange={setCity}
                 disabled={disabled}
-                required={required}
-                className="w-full h-11 px-3 rounded-lg border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
               >
-                <option value="">Selecciona…</option>
-                {COLOMBIA.find((d) => d.name === value.department)?.cities.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-                <option value="Otro">— Otro municipio —</option>
-              </select>
-              {(value.city === "Otro" || showCustomCityInput) && (
-                <input
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona municipio…" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {COLOMBIA.find((d) => d.name === value.department)?.cities.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                  <SelectItem value={OTRO_CITY}>— Otro municipio —</SelectItem>
+                </SelectContent>
+              </Select>
+              {showCustomCity && (
+                <Input
                   type="text"
                   value={customCity}
                   onChange={(e) => setCustomCityValue(e.target.value)}
@@ -165,7 +184,6 @@ export function LocationSelector({
                   disabled={disabled}
                   required={required}
                   maxLength={50}
-                  className="w-full h-11 px-3 rounded-lg border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                 />
               )}
             </>
@@ -175,7 +193,7 @@ export function LocationSelector({
             </p>
           )
         ) : (
-          <input
+          <Input
             type="text"
             value={value.city}
             onChange={(e) => onChange({ ...value, city: e.target.value })}
@@ -183,7 +201,6 @@ export function LocationSelector({
             disabled={disabled}
             required={required}
             maxLength={50}
-            className="w-full h-11 px-3 rounded-lg border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           />
         )}
       </div>
