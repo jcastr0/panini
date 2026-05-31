@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { upload } from "@vercel/blob/client";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   processCollectorCardFromBlob,
   removeCollectorCard,
@@ -31,6 +32,7 @@ export function CollectorCardUpload({
   const [phase, setPhase] = useState<"idle" | "uploading" | "processing">(
     "idle",
   );
+  const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
 
   function onChoose(picked: File | null) {
     setError(null);
@@ -97,7 +99,10 @@ export function CollectorCardUpload({
   }
 
   function handleRemove() {
-    if (!confirm("¿Quitar la lámina?")) return;
+    setConfirmRemoveOpen(true);
+  }
+
+  function doRemove() {
     startTransition(async () => {
       const res = await removeCollectorCard();
       if (res && "error" in res && res.error) {
@@ -105,6 +110,7 @@ export function CollectorCardUpload({
       } else {
         toast.success("Lámina eliminada.");
       }
+      setConfirmRemoveOpen(false);
     });
   }
 
@@ -198,6 +204,18 @@ export function CollectorCardUpload({
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmRemoveOpen}
+        onOpenChange={setConfirmRemoveOpen}
+        title="¿Quitar tu lámina?"
+        description="Tu MyPanini dejará de aparecer en el álbum y en tus avisos a otros coleccionistas. Puedes volver a subirla cuando quieras."
+        confirmLabel="Quitar"
+        cancelLabel="Cancelar"
+        variant="destructive"
+        onConfirm={doRemove}
+        pending={pending}
+      />
     </div>
   );
 }
