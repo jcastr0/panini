@@ -42,7 +42,7 @@ export default async function AmigosPage({
   );
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://paninijd.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.paninijd.lat";
 
   return (
     <div className="space-y-8">

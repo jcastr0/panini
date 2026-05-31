@@ -277,7 +277,7 @@ function buildPayload(
       : variant === "duplicate"
         ? `Tengo ${count} repetidos para cambio:`
         : `Tengo estos ${count} cromos:`;
-  return `${header}\n${codes.join(", ")}\n\n— paninijd.vercel.app`;
+  return `${header}\n${codes.join(", ")}\n\n— www.paninijd.lat`;
 }
 
 function CopyButton({
