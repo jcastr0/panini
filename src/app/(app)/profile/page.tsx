@@ -13,11 +13,11 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Los tipos generados aún no conocen email_* (migración 0033); casteamos.
+  // Los tipos generados aún no conocen email_* + department; casteamos.
   const { data: profile } = (await supabase
     .from("profiles")
     .select(
-      "username, display_name, city, country, avatar_url, is_public_profile, collector_card_base64, email_trades, email_matches, email_digest",
+      "username, display_name, city, department, country, avatar_url, is_public_profile, collector_card_base64, email_trades, email_matches, email_digest",
     )
     .eq("id", user.id)
     .maybeSingle()) as {
@@ -25,6 +25,7 @@ export default async function ProfilePage() {
       username: string | null;
       display_name: string | null;
       city: string | null;
+      department: string | null;
       country: string | null;
       avatar_url: string | null;
       is_public_profile: boolean | null;
@@ -78,6 +79,7 @@ export default async function ProfilePage() {
         displayName={profile?.display_name ?? ""}
         city={profile?.city ?? ""}
         country={profile?.country ?? "Colombia"}
+        department={profile?.department ?? null}
         isPublicProfile={profile?.is_public_profile ?? true}
       />
 

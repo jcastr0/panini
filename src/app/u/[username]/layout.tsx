@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { UserMenu } from "@/app/(app)/_components/user-menu";
@@ -20,10 +21,12 @@ export default async function PublicLayout({
   // Si hay sesión, mostramos la nav completa de la app (idéntica a (app)/layout)
   // para que el usuario logueado pueda seguir navegando mientras mira otros perfiles.
   if (user) {
-    const [{ data: profile }, { count: pendingTrades }] = await Promise.all([
+    const [profileQ, { count: pendingTrades }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("username, display_name, avatar_url, collector_card_base64")
+        .select(
+          "username, display_name, avatar_url, collector_card_base64, country, department, city",
+        )
         .eq("id", user.id)
         .maybeSingle(),
       supabase
@@ -32,6 +35,17 @@ export default async function PublicLayout({
         .eq("to_user", user.id)
         .eq("status", "pending"),
     ]);
+
+    // department es de migración nueva — casteamos hasta regenerar types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const profile = profileQ.data as any;
+    const p = profile;
+    const locationMissing =
+      !p?.country ||
+      !p?.city ||
+      String(p.city).trim() === "" ||
+      (p.country === "Colombia" && !p.department);
+    if (locationMissing) redirect("/onboarding");
 
     return (
       <div className="flex-1 flex flex-col">

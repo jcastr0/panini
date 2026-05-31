@@ -17,10 +17,12 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { count: pendingTrades }] = await Promise.all([
+  const [profileQ, { count: pendingTrades }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("username, display_name, avatar_url, collector_card_base64")
+      .select(
+        "username, display_name, avatar_url, collector_card_base64, country, department, city",
+      )
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -29,6 +31,17 @@ export default async function AppLayout({
       .eq("to_user", user.id)
       .eq("status", "pending"),
   ]);
+
+  // department es de migración nueva — casteamos hasta regenerar types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profile = profileQ.data as any;
+  const p = profile;
+  const locationMissing =
+    !p?.country ||
+    !p?.city ||
+    String(p.city).trim() === "" ||
+    (p.country === "Colombia" && !p.department);
+  if (locationMissing) redirect("/onboarding");
 
   return (
     <div className="flex-1 flex flex-col">

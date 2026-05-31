@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { updateProfile, type UpdateProfileState } from "../actions";
 
 export function ProfileForm({
@@ -14,6 +15,7 @@ export function ProfileForm({
   displayName,
   city,
   country,
+  department,
   isPublicProfile,
 }: {
   email: string;
@@ -21,8 +23,14 @@ export function ProfileForm({
   displayName: string;
   city: string;
   country: string;
+  department: string | null;
   isPublicProfile: boolean;
 }) {
+  const [location, setLocation] = useState<LocationValue>({
+    country: country || "Colombia",
+    department: department || null,
+    city: city || "",
+  });
   const [state, action, pending] = useActionState<UpdateProfileState, FormData>(
     updateProfile,
     {},
@@ -68,25 +76,13 @@ export function ProfileForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="city">Ciudad</Label>
-          <Input
-            id="city"
-            name="city"
-            defaultValue={city}
-            placeholder="Valledupar"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="country">País</Label>
-          <Input
-            id="country"
-            name="country"
-            defaultValue={country}
-            placeholder="Colombia"
-          />
-        </div>
+      <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
+        <p className="text-sm font-medium">Ubicación</p>
+        <LocationSelector value={location} onChange={setLocation} />
+        {/* Hidden inputs para que FormData reciba los valores */}
+        <input type="hidden" name="country" value={location.country} />
+        <input type="hidden" name="department" value={location.department ?? ""} />
+        <input type="hidden" name="city" value={location.city} />
       </div>
 
       <label className="flex items-start gap-3 cursor-pointer">
