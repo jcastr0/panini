@@ -4,6 +4,20 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmailAsync } from "@/lib/email";
+import { SITE_URL } from "@/lib/email/client";
+import { TradeReceivedEmail } from "@/lib/email/templates/trade-received";
+import { TradeAcceptedEmail } from "@/lib/email/templates/trade-accepted";
+import { TradeRejectedEmail } from "@/lib/email/templates/trade-rejected";
+
+async function getDisplayName(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("username, display_name")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.display_name || (data?.username ? `@${data.username}` : "un coleccionista");
+}
 
 const tradeItemSchema = z.object({
   sticker_id: z.string().uuid(),
@@ -68,6 +82,30 @@ export async function createTrade(input: z.infer<typeof createTradeSchema>) {
     return { error: itemsError.message };
   }
 
+  // Email al receptor (no bloqueante, respeta pref email_trades)
+  const proposerName = await getDisplayName(supabase, user.id);
+  const recipientName = await getDisplayName(supabase, to_user);
+  const offerCount = items.filter((i) => i.direction === "offer").length;
+  const requestCount = items.filter((i) => i.direction === "request").length;
+  sendEmailAsync({
+    userId: to_user,
+    prefKey: "trades",
+    kind: "trade_received",
+    subjectId: trade.id,
+    subject: `${proposerName} te propuso un intercambio`,
+    dedupeHours: 1 / 60, // ~1 min — anti race
+    render: (unsubscribeUrl) =>
+      TradeReceivedEmail({
+        recipientName,
+        proposerName,
+        offerCount,
+        requestCount,
+        message: message ?? null,
+        tradeUrl: `${SITE_URL}/trades/${trade.id}`,
+        unsubscribeUrl,
+      }),
+  });
+
   revalidatePath("/trades");
   revalidatePath("/trades/new");
   revalidatePath("/", "layout");
@@ -98,6 +136,33 @@ export async function updateTradeStatus(
   if (status === "accepted") {
     const { error } = await supabase.rpc("accept_trade", { p_trade_id: trade_id });
     if (error) return { error: error.message };
+
+    // Email al proposer informando que aceptaron
+    const { data: tr } = await supabase
+      .from("trades")
+      .select("from_user, to_user")
+      .eq("id", trade_id)
+      .single();
+    if (tr) {
+      const recipientName = await getDisplayName(supabase, tr.from_user);
+      const accepterName = await getDisplayName(supabase, tr.to_user);
+      sendEmailAsync({
+        userId: tr.from_user,
+        prefKey: "trades",
+        kind: "trade_accepted",
+        subjectId: trade_id,
+        subject: `${accepterName} aceptó tu intercambio`,
+        dedupeHours: 1 / 60,
+        render: (unsubscribeUrl) =>
+          TradeAcceptedEmail({
+            recipientName,
+            accepterName,
+            tradeUrl: `${SITE_URL}/trades/${trade_id}`,
+            unsubscribeUrl,
+          }),
+      });
+    }
+
     revalidateTrade(trade_id);
     return { success: true };
   }
@@ -134,6 +199,27 @@ export async function updateTradeStatus(
   await supabase
     .from("notifications")
     .insert({ user_id: otherUser, kind: notifKind, trade_id });
+
+  // Email solo si fue 'rejected' (cancelled no notifica al otro lado por email)
+  if (status === "rejected") {
+    const recipientName = await getDisplayName(supabase, otherUser);
+    const rejecterName = await getDisplayName(supabase, user.id);
+    sendEmailAsync({
+      userId: otherUser,
+      prefKey: "trades",
+      kind: "trade_rejected",
+      subjectId: trade_id,
+      subject: `${rejecterName} rechazó tu intercambio`,
+      dedupeHours: 1 / 60,
+      render: (unsubscribeUrl) =>
+        TradeRejectedEmail({
+          recipientName,
+          rejecterName,
+          newMatchesUrl: `${SITE_URL}/trades/new`,
+          unsubscribeUrl,
+        }),
+    });
+  }
 
   revalidateTrade(trade_id);
   return { success: true };
