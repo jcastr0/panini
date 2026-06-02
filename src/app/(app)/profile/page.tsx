@@ -13,11 +13,11 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Los tipos generados aún no conocen email_* + department; casteamos.
+  // Los tipos generados aún no conocen email_* + department + phone; casteamos.
   const { data: profile } = (await supabase
     .from("profiles")
     .select(
-      "username, display_name, city, department, country, avatar_url, is_public_profile, collector_card_base64, email_trades, email_matches, email_digest",
+      "username, display_name, city, department, country, phone, avatar_url, is_public_profile, collector_card_base64, email_trades, email_matches, email_digest",
     )
     .eq("id", user.id)
     .maybeSingle()) as {
@@ -27,6 +27,7 @@ export default async function ProfilePage() {
       city: string | null;
       department: string | null;
       country: string | null;
+      phone: string | null;
       avatar_url: string | null;
       is_public_profile: boolean | null;
       collector_card_base64: string | null;
@@ -80,6 +81,7 @@ export default async function ProfilePage() {
         city={profile?.city ?? ""}
         country={profile?.country ?? "Colombia"}
         department={profile?.department ?? null}
+        phone={profile?.phone ?? null}
         isPublicProfile={profile?.is_public_profile ?? true}
       />
 

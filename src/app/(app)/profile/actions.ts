@@ -17,6 +17,20 @@ const profileSchema = z
     city: z.string().max(80).optional().nullable(),
     department: z.string().max(80).optional().nullable(),
     country: z.string().max(80).optional().nullable(),
+    phone: z
+      .string()
+      .max(30)
+      .optional()
+      .nullable()
+      .transform((v) => {
+        if (!v) return null;
+        const digits = v.replace(/\D/g, "");
+        return digits.length === 0 ? null : digits;
+      })
+      .refine(
+        (v) => v === null || (v.length >= 8 && v.length <= 15),
+        "Teléfono inválido (8 a 15 dígitos)",
+      ),
     is_public_profile: z.boolean().default(true),
   })
   .refine(
@@ -46,6 +60,7 @@ export async function updateProfile(
     city: formData.get("city") || null,
     department: formData.get("department") || null,
     country: formData.get("country") || null,
+    phone: formData.get("phone") || null,
     is_public_profile: formData.get("is_public_profile") === "on",
   });
   if (!parsed.success) {

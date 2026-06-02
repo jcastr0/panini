@@ -7,6 +7,7 @@ import { MobileTabBar } from "@/app/(app)/_components/mobile-tab-bar";
 import { NotificationBell } from "@/app/(app)/_components/notification-bell";
 import { AppFooter, AppFooterMobile } from "@/app/(app)/_components/app-footer";
 import { SupportButton } from "@/app/(app)/_components/support-button";
+import { PhoneCampaignBanner } from "@/app/(app)/_components/phone-campaign-banner";
 
 export default async function PublicLayout({
   children,
@@ -25,7 +26,7 @@ export default async function PublicLayout({
       supabase
         .from("profiles")
         .select(
-          "username, display_name, avatar_url, collector_card_base64, country, department, city",
+          "username, display_name, avatar_url, collector_card_base64, country, department, city, phone",
         )
         .eq("id", user.id)
         .maybeSingle(),
@@ -92,6 +93,7 @@ export default async function PublicLayout({
             </div>
           </div>
         </header>
+        <PhoneCampaignBanner phoneMissing={!p?.phone} />
         <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full pb-24 md:pb-8">
           {children}
           <AppFooterMobile />

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { updateProfile, type UpdateProfileState } from "../actions";
 
 export function ProfileForm({
@@ -16,6 +17,7 @@ export function ProfileForm({
   city,
   country,
   department,
+  phone,
   isPublicProfile,
 }: {
   email: string;
@@ -24,6 +26,7 @@ export function ProfileForm({
   city: string;
   country: string;
   department: string | null;
+  phone: string | null;
   isPublicProfile: boolean;
 }) {
   const [location, setLocation] = useState<LocationValue>({
@@ -37,7 +40,15 @@ export function ProfileForm({
   );
 
   useEffect(() => {
-    if (state.success) toast.success("Perfil actualizado");
+    if (state.success) {
+      toast.success("Perfil actualizado");
+      // Limpiar bandera de campaña phone al guardar exitoso
+      try {
+        localStorage.removeItem("paninijd.dismissed_phone_campaign");
+      } catch {
+        /* ignore */
+      }
+    }
   }, [state.success]);
 
   return (
@@ -76,10 +87,35 @@ export function ProfileForm({
         />
       </div>
 
+      <div className="space-y-2 md:col-span-2" id="phone">
+        <Label htmlFor="phone_input" className="flex items-center gap-1.5">
+          <WhatsAppIcon className="size-3.5 text-[#25D366]" />
+          WhatsApp
+        </Label>
+        <div className="flex items-center rounded-md border focus-within:ring-2 focus-within:ring-ring overflow-hidden">
+          <span className="px-3 text-muted-foreground text-sm bg-muted py-2 font-mono">
+            +
+          </span>
+          <Input
+            id="phone_input"
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            defaultValue={phone ?? ""}
+            placeholder="573001234567"
+            className="border-0 focus-visible:ring-0"
+            maxLength={20}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Solo dígitos con código de país. Tus amigos podrán abrir WhatsApp
+          directo desde tus propuestas de intercambio.
+        </p>
+      </div>
+
       <div className="space-y-3 rounded-xl border bg-muted/30 p-4 md:col-span-2">
         <p className="text-sm font-medium">Ubicación</p>
         <LocationSelector value={location} onChange={setLocation} />
-        {/* Hidden inputs para que FormData reciba los valores */}
         <input type="hidden" name="country" value={location.country} />
         <input type="hidden" name="department" value={location.department ?? ""} />
         <input type="hidden" name="city" value={location.city} />

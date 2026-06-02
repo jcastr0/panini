@@ -3,6 +3,9 @@ import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { stickerImagePath } from "@/lib/sticker-image";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { SITE_URL } from "@/lib/email/client";
 import { TradeActions } from "./_components/trade-actions";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -44,13 +47,24 @@ export default async function TradeDetailPage({
         "id, direction, quantity, sticker_id, stickers(code, number, name, team, type)",
       )
       .eq("trade_id", id),
-    supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
       .from("profiles")
-      .select("id, username, display_name, city, avatar_url")
+      .select("id, username, display_name, city, avatar_url, phone")
       .in("id", [trade.from_user, trade.to_user]),
   ]);
 
-  const pMap = new Map((profiles ?? []).map((p) => [p.id, p] as const));
+  type ProfileRow = {
+    id: string;
+    username: string | null;
+    display_name: string | null;
+    city: string | null;
+    avatar_url: string | null;
+    phone: string | null;
+  };
+  const pMap = new Map(
+    ((profiles ?? []) as ProfileRow[]).map((p) => [p.id, p] as const),
+  );
   const other = pMap.get(otherUserId);
 
   const offered = (items ?? []).filter((i) => i.direction === "offer");
@@ -101,6 +115,31 @@ export default async function TradeDetailPage({
           items={requested}
         />
       </div>
+
+      {/* WhatsApp del otro participante (si compartió teléfono) */}
+      {(() => {
+        const otherPhone = other?.phone;
+        const me = pMap.get(user.id);
+        const myName = me?.display_name ?? `@${me?.username ?? "yo"}`;
+        const tradeUrl = `${SITE_URL}/trades/${trade.id}`;
+        const msg = isFrom
+          ? `¡Hola! Soy ${myName} desde Panini·JD. Te propuse un intercambio, ¿qué dices? ${tradeUrl}`
+          : `¡Hola! Soy ${myName} desde Panini·JD. Te respondo sobre tu propuesta de intercambio. ${tradeUrl}`;
+        const waUrl = otherPhone ? buildWhatsAppUrl(otherPhone, msg) : null;
+        if (!waUrl) return null;
+        return (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full px-5 h-11 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: "#25D366" }}
+          >
+            <WhatsAppIcon className="size-4" />
+            Coordinar por WhatsApp
+          </a>
+        );
+      })()}
 
       <TradeActions
         tradeId={trade.id}
