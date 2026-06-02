@@ -43,12 +43,13 @@ export default async function CollectionPage() {
           .order("number", { ascending: true })
           .range(from, to),
       ).then((data) => ({ data })),
-      paginate<{ sticker_id: string; quantity: number }>((from, to) =>
-        supabase
-          .from("user_stickers")
-          .select("sticker_id, quantity")
-          .eq("user_id", user.id)
-          .range(from, to),
+      paginate<{ sticker_id: string; quantity: number; updated_at: string }>(
+        (from, to) =>
+          supabase
+            .from("user_stickers")
+            .select("sticker_id, quantity, updated_at")
+            .eq("user_id", user.id)
+            .range(from, to),
       ).then((data) => ({ data })),
       getUserStats(user.id),
       getCollectorCard(user.id),
@@ -56,13 +57,16 @@ export default async function CollectionPage() {
   );
 
   const qtyMap = new Map<string, number>();
-  (ownedResult.data ?? []).forEach((r) =>
-    qtyMap.set(r.sticker_id, r.quantity ?? 0),
-  );
+  const updatedMap = new Map<string, string>();
+  (ownedResult.data ?? []).forEach((r) => {
+    qtyMap.set(r.sticker_id, r.quantity ?? 0);
+    if (r.updated_at) updatedMap.set(r.sticker_id, r.updated_at);
+  });
 
   const stickers: CollectionSticker[] = (stickersResult.data ?? []).map((s) => ({
     ...s,
     qty: qtyMap.get(s.id) ?? 0,
+    updatedAt: updatedMap.get(s.id) ?? null,
   }));
 
   const ownerProps = {

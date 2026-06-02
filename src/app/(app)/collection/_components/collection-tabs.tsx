@@ -28,6 +28,8 @@ export type CollectionSticker = {
   type: "normal" | "shiny" | "legend" | "special";
   page: number | null;
   qty: number;
+  /** ISO string del updated_at en user_stickers. */
+  updatedAt: string | null;
 };
 
 const STORAGE_KEY = "paninijd.collection.viewMode";
@@ -63,10 +65,29 @@ export function CollectionTabs({
   const dupes = useMemo(() => stickers.filter((s) => s.qty > 1), [stickers]);
   const missing = useMemo(() => stickers.filter((s) => s.qty === 0), [stickers]);
 
+  // Recientes: cromos pegados/actualizados en últimas 72h.
+  // Si no hay nada en 72h, expandimos a 7 días.
+  // Ordenados por updatedAt desc.
+  const recent = useMemo(() => {
+    const ownedWithDate = owned
+      .filter((s) => s.updatedAt)
+      .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+    const now = Date.now();
+    const T_72H = 72 * 3600 * 1000;
+    const T_7D = 7 * 24 * 3600 * 1000;
+    const within = (ms: number) =>
+      ownedWithDate.filter(
+        (s) => now - new Date(s.updatedAt!).getTime() <= ms,
+      );
+    const last72h = within(T_72H);
+    if (last72h.length > 0) return { list: last72h, window: "72h" as const };
+    return { list: within(T_7D), window: "7d" as const };
+  }, [owned]);
+
   return (
     <Tabs defaultValue="owned" className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <TabsList className="h-auto p-1">
+        <TabsList className="h-auto p-1 flex-wrap">
           <TabsTrigger value="owned" className="text-base py-2.5 px-4">
             Tienes ({ownedCount})
           </TabsTrigger>
@@ -75,6 +96,14 @@ export function CollectionTabs({
           </TabsTrigger>
           <TabsTrigger value="missing" className="text-base py-2.5 px-4">
             Faltantes ({missingCount})
+          </TabsTrigger>
+          <TabsTrigger value="recent" className="text-base py-2.5 px-4">
+            Recientes
+            {recent.list.length > 0 && (
+              <span className="ml-1 inline-flex items-center justify-center min-w-[20px] h-[20px] rounded-full px-1.5 text-[11px] font-bold bg-[var(--gold)]/20 text-[color:var(--gold)] tabular">
+                {recent.list.length}
+              </span>
+            )}
           </TabsTrigger>
         </TabsList>
 
@@ -138,6 +167,25 @@ export function CollectionTabs({
           variant="missing"
           empty="¡Felicidades, lo tienes todo!"
         />
+      </TabsContent>
+      <TabsContent value="recent">
+        {recent.list.length === 0 ? (
+          <Empty title="No has agregado cromos esta semana" />
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground mb-3">
+              {recent.window === "72h"
+                ? "Lo que pegaste o sumaste en las últimas 72 horas."
+                : "Esta semana no has pegado nada en las últimas 72h — te muestro los últimos 7 días."}
+            </p>
+            <TabBody
+              stickers={recent.list}
+              mode={viewMode}
+              variant="owned"
+              empty=""
+            />
+          </>
+        )}
       </TabsContent>
     </Tabs>
   );
