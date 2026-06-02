@@ -1,17 +1,20 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getProgressForUsers } from "@/lib/queries";
 import { ShareCard } from "../_components/share-card";
 import { FriendAvatar } from "./_components/friend-avatar";
+import { FriendSearchBox } from "./_components/friend-search-box";
+
+const PAGE_SIZE = 24;
 
 export default async function AmigosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, page: pageRaw } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -19,23 +22,28 @@ export default async function AmigosPage({
   if (!user) redirect("/login");
 
   const query = (q ?? "").trim().toLowerCase();
+  const currentPage = Math.max(1, parseInt(pageRaw ?? "1", 10) || 1);
+  const offset = (currentPage - 1) * PAGE_SIZE;
 
-  // me + results en paralelo — collector_card_base64 excluido (varios MB innecesarios)
+  // Query base con count para paginación
   let resultsQuery = supabase
     .from("profiles")
-    .select("id, username, display_name, city, country, avatar_url")
+    .select("id, username, display_name, city, country, avatar_url", {
+      count: "exact",
+    })
     .eq("is_public_profile", true)
     .neq("id", user.id)
     .order("created_at", { ascending: false })
-    .limit(48);
+    .range(offset, offset + PAGE_SIZE - 1);
   if (query.length > 0) {
     resultsQuery = resultsQuery.ilike("username", `${query}%`);
   }
 
-  const [{ data: me }, { data: results }] = await Promise.all([
+  const [{ data: me }, resultsResp] = await Promise.all([
     supabase.from("profiles").select("username").eq("id", user.id).maybeSingle(),
     resultsQuery,
   ]);
+  const { data: results, count: totalCount } = resultsResp;
 
   const progressMap = await getProgressForUsers(
     (results ?? []).map((p) => p.id),
@@ -43,6 +51,16 @@ export default async function AmigosPage({
 
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.paninijd.lat";
+  const totalPages = Math.max(1, Math.ceil((totalCount ?? 0) / PAGE_SIZE));
+  const hasMultiplePages = totalPages > 1;
+
+  const pageHref = (n: number) => {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (n > 1) params.set("page", String(n));
+    const s = params.toString();
+    return `/amigos${s ? `?${s}` : ""}`;
+  };
 
   return (
     <div className="space-y-8">
@@ -59,22 +77,21 @@ export default async function AmigosPage({
 
       {me?.username && <ShareCard username={me.username} baseUrl={baseUrl} />}
 
-      <form className="relative" action="/amigos" method="get">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-muted-foreground pointer-events-none" />
-        <input
-          type="search"
-          name="q"
-          defaultValue={q ?? ""}
-          placeholder="Busca por @username (ej: jhonatan)"
-          className="w-full h-12 pl-11 pr-4 rounded-full border bg-card text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          autoComplete="off"
-        />
-      </form>
+      <FriendSearchBox initialQuery={q ?? ""} />
 
-      {query.length > 0 && (
+      {totalCount !== null && totalCount !== undefined && (
         <p className="text-sm text-muted-foreground">
-          {results?.length ?? 0} coleccionista{results?.length === 1 ? "" : "s"}{" "}
-          que coinciden con <span className="font-mono">@{query}</span>
+          {query.length > 0 ? (
+            <>
+              {totalCount} coleccionista{totalCount === 1 ? "" : "s"} con{" "}
+              <span className="font-mono">@{query}</span>
+            </>
+          ) : (
+            <>
+              {totalCount} coleccionista{totalCount === 1 ? "" : "s"} en la
+              comunidad
+            </>
+          )}
         </p>
       )}
 
@@ -121,9 +138,7 @@ export default async function AmigosPage({
                 {prog && prog.total > 0 && (
                   <div className="space-y-1">
                     <div className="flex items-baseline justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        Avance
-                      </span>
+                      <span className="text-muted-foreground">Avance</span>
                       <span className="font-mono tabular font-semibold text-[var(--panini-blue)]">
                         {prog.percent}%
                         <span className="text-muted-foreground font-normal ml-1">
@@ -150,6 +165,34 @@ export default async function AmigosPage({
           );
         })}
       </ul>
+
+      {hasMultiplePages && (
+        <nav className="flex items-center justify-between gap-3 pt-2" aria-label="Paginación">
+          {currentPage > 1 ? (
+            <Link
+              href={pageHref(currentPage - 1)}
+              className="inline-flex items-center gap-1.5 rounded-full border px-4 h-10 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              <ChevronLeft className="size-4" /> Anterior
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="text-sm font-mono text-muted-foreground tabular">
+            Página {currentPage} de {totalPages}
+          </span>
+          {currentPage < totalPages ? (
+            <Link
+              href={pageHref(currentPage + 1)}
+              className="inline-flex items-center gap-1.5 rounded-full border px-4 h-10 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              Siguiente <ChevronRight className="size-4" />
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )}
     </div>
   );
 }
