@@ -122,9 +122,32 @@ export default async function TradeDetailPage({
         const me = pMap.get(user.id);
         const myName = me?.display_name ?? `@${me?.username ?? "yo"}`;
         const tradeUrl = `${SITE_URL}/trades/${trade.id}`;
-        const msg = isFrom
-          ? `¡Hola! Soy ${myName} desde Panini·JD. Te propuse un intercambio, ¿qué dices? ${tradeUrl}`
-          : `¡Hola! Soy ${myName} desde Panini·JD. Te respondo sobre tu propuesta de intercambio. ${tradeUrl}`;
+
+        // Mensaje según el estado del trade
+        let msg: string;
+        let ctaLabel: string;
+        if (trade.status === "accepted") {
+          // Trade aceptado por ambas partes — sugerir encuentro
+          msg = [
+            `¡Hola! Soy ${myName} desde Panini·JD.`,
+            "",
+            "Como ya aceptamos el intercambio, te propongo encontrarnos en el",
+            "Ocean Mall de Santa Marta para hacer el cambio. ¿Te queda bien?",
+            "",
+            `Detalles del trade: ${tradeUrl}`,
+          ].join("\n");
+          ctaLabel = "Acordar encuentro";
+        } else if (trade.status === "completed") {
+          msg = `¡Hola ${myName ? "" : ""}! Soy ${myName} desde Panini·JD. Gracias por el intercambio.\n\n${tradeUrl}`;
+          ctaLabel = "Escribir por WhatsApp";
+        } else {
+          // pending: mensaje genérico de propuesta
+          msg = isFrom
+            ? `¡Hola! Soy ${myName} desde Panini·JD. Te propuse un intercambio, ¿qué dices?\n\n${tradeUrl}`
+            : `¡Hola! Soy ${myName} desde Panini·JD. Te respondo sobre tu propuesta de intercambio.\n\n${tradeUrl}`;
+          ctaLabel = "Coordinar por WhatsApp";
+        }
+
         const waUrl = otherPhone ? buildWhatsAppUrl(otherPhone, msg) : null;
         if (!waUrl) return null;
         return (
@@ -136,7 +159,7 @@ export default async function TradeDetailPage({
             style={{ backgroundColor: "#25D366" }}
           >
             <WhatsAppIcon className="size-4" />
-            Coordinar por WhatsApp
+            {ctaLabel}
           </a>
         );
       })()}
