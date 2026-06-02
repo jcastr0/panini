@@ -14,8 +14,8 @@ import type { SectionSticker } from "../_components/team-block";
 const PAGE_TITLES: Record<number, string> = {
   0: "Portada",
   1: "El Trofeo",
-  2: "Identidad del torneo",
-  3: "Balón y póster oficial",
+  2: "Mascota y póster oficial",
+  3: "Balón y sedes oficiales",
 };
 
 export default async function AperturaPage() {

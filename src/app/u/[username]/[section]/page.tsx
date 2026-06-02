@@ -37,8 +37,8 @@ const PAGE_TITLES: Record<SpecialKey, Record<number, string>> = {
   apertura: {
     0: "Portada",
     1: "El Trofeo",
-    2: "Identidad del torneo",
-    3: "Balón y póster oficial",
+    2: "Mascota y póster oficial",
+    3: "Balón y sedes oficiales",
   },
   historia: {
     106: "Campeones 1934-1962",
