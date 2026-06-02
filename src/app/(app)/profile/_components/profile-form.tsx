@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
+import { PhoneInput } from "@/components/phone-input";
 import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { updateProfile, type UpdateProfileState } from "../actions";
 
@@ -34,6 +35,7 @@ export function ProfileForm({
     department: department || null,
     city: city || "",
   });
+  const [phoneValue, setPhoneValue] = useState(phone ?? "");
   const [state, action, pending] = useActionState<UpdateProfileState, FormData>(
     updateProfile,
     {},
@@ -88,28 +90,19 @@ export function ProfileForm({
       </div>
 
       <div className="space-y-2 md:col-span-2" id="phone">
-        <Label htmlFor="phone_input" className="flex items-center gap-1.5">
+        <Label className="flex items-center gap-1.5">
           <WhatsAppIcon className="size-3.5 text-[#25D366]" />
           WhatsApp
         </Label>
-        <div className="flex items-center rounded-md border focus-within:ring-2 focus-within:ring-ring overflow-hidden">
-          <span className="px-3 text-muted-foreground text-sm bg-muted py-2 font-mono">
-            +
-          </span>
-          <Input
-            id="phone_input"
-            name="phone"
-            type="tel"
-            inputMode="tel"
-            defaultValue={phone ?? ""}
-            placeholder="573001234567"
-            className="border-0 focus-visible:ring-0"
-            maxLength={20}
-          />
-        </div>
+        <PhoneInput
+          value={phoneValue}
+          onChange={setPhoneValue}
+          name="phone"
+          countryHint={location.country}
+        />
         <p className="text-xs text-muted-foreground">
-          Solo dígitos con código de país. Tus amigos podrán abrir WhatsApp
-          directo desde tus propuestas de intercambio.
+          Tus amigos podrán abrir WhatsApp directo desde tus propuestas de
+          intercambio.
         </p>
       </div>
 
