@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Command,
@@ -46,6 +46,7 @@ export function Combobox({
   searchPlaceholder = "Buscar…",
   emptyText = "Sin resultados",
   disabled = false,
+  clearable = true,
   className,
 }: {
   value: string;
@@ -55,17 +56,20 @@ export function Combobox({
   searchPlaceholder?: string;
   emptyText?: string;
   disabled?: boolean;
+  /** Mostrar botón ✕ para limpiar la selección cuando hay valor. Default: true */
+  clearable?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
   const selected = options.find((o) => o.value === value);
+  const showClear = clearable && !!selected && !disabled;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         disabled={disabled}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm text-left",
+          "group/cb relative flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 py-2 pr-9 text-sm text-left",
           "ring-offset-background placeholder:text-muted-foreground",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -76,7 +80,23 @@ export function Combobox({
         <span className={cn("truncate", !selected && "text-muted-foreground")}>
           {selected?.label ?? placeholder}
         </span>
-        <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+        {showClear ? (
+          <span
+            role="button"
+            tabIndex={-1}
+            aria-label="Limpiar selección"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onChange("");
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 size-6 grid place-items-center rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="size-3.5" />
+          </span>
+        ) : (
+          <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 size-4 shrink-0 opacity-50" />
+        )}
       </PopoverTrigger>
       <PopoverContent
         align="start"
