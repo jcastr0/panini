@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -24,6 +25,11 @@ export type LocationValue = {
 };
 
 const OTRO_CITY = "Otro";
+
+const DEPARTMENT_OPTIONS: ComboboxOption[] = DEPARTMENT_NAMES.map((d) => ({
+  value: d,
+  label: d,
+}));
 
 /**
  * Selector de ubicación con cascading dropdowns shadcn:
@@ -133,20 +139,15 @@ export function LocationSelector({
             <MapPin className="size-3.5 text-muted-foreground" />
             Departamento {required && <span className="text-[var(--panini-red)]">*</span>}
           </Label>
-          <Select
+          <Combobox
             value={value.department ?? ""}
-            onValueChange={setDepartment}
+            onChange={(v) => setDepartment(v)}
+            options={DEPARTMENT_OPTIONS}
+            placeholder="Selecciona departamento…"
+            searchPlaceholder="Buscar departamento…"
+            emptyText="Sin coincidencias"
             disabled={disabled}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecciona departamento…" />
-            </SelectTrigger>
-            <SelectContent>
-              {DEPARTMENT_NAMES.map((d) => (
-                <SelectItem key={d} value={d}>{d}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          />
         </div>
       )}
 
@@ -160,21 +161,20 @@ export function LocationSelector({
         {isColombia ? (
           value.department ? (
             <>
-              <Select
+              <Combobox
                 value={citySelectValue}
-                onValueChange={setCity}
+                onChange={(v) => setCity(v)}
+                options={[
+                  ...(COLOMBIA.find((d) => d.name === value.department)?.cities ?? []).map(
+                    (c) => ({ value: c, label: c }),
+                  ),
+                  { value: OTRO_CITY, label: "— Otro municipio —", hint: "escribir" },
+                ]}
+                placeholder="Selecciona municipio…"
+                searchPlaceholder="Buscar municipio…"
+                emptyText="Sin coincidencias. Usa 'Otro' para escribir."
                 disabled={disabled}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona municipio…" />
-                </SelectTrigger>
-                <SelectContent className="max-h-64">
-                  {COLOMBIA.find((d) => d.name === value.department)?.cities.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                  <SelectItem value={OTRO_CITY}>— Otro municipio —</SelectItem>
-                </SelectContent>
-              </Select>
+              />
               {showCustomCity && (
                 <Input
                   type="text"
