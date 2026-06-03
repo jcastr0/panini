@@ -115,6 +115,7 @@ export async function createTrade(input: z.infer<typeof createTradeSchema>) {
 const updateStatusSchema = z.object({
   trade_id: z.string().uuid(),
   status: z.enum(["accepted", "rejected", "cancelled", "completed"]),
+  auto_paste: z.boolean().optional(),
 });
 
 export async function updateTradeStatus(
@@ -167,7 +168,12 @@ export async function updateTradeStatus(
     return { success: true };
   }
   if (status === "completed") {
-    const { error } = await supabase.rpc("complete_trade", { p_trade_id: trade_id });
+    const autoPaste = parsed.data.auto_paste ?? true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("complete_trade", {
+      p_trade_id: trade_id,
+      p_auto_paste: autoPaste,
+    });
     if (error) return { error: error.message };
     revalidateTrade(trade_id);
     return { success: true };
@@ -223,4 +229,44 @@ export async function updateTradeStatus(
 
   revalidateTrade(trade_id);
   return { success: true };
+}
+
+export async function reconcileTrade(trade_id: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No autenticado" };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("reconcile_trade", {
+    p_trade_id: trade_id,
+  });
+  if (error) return { error: error.message };
+  revalidateTrade(trade_id);
+  return {
+    success: true,
+    adjusted: data?.adjusted ?? 0,
+    removed: data?.removed ?? 0,
+    autoCancelled: data?.auto_cancelled ?? false,
+  };
+}
+
+export async function pasteTradeItem(trade_item_id: string) {
+  const supabase = await createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any).rpc("paste_trade_item", {
+    p_trade_item_id: trade_item_id,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { success: true };
+}
+
+export async function pasteRemainingTradeItems(trade_id: string) {
+  const supabase = await createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("paste_remaining_trade_items", {
+    p_trade_id: trade_id,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { success: true, pasted: (data as number) ?? 0 };
 }

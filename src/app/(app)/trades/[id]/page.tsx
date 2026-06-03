@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { stickerImagePath } from "@/lib/sticker-image";
@@ -7,6 +7,7 @@ import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { SITE_URL } from "@/lib/email/client";
 import { TradeActions } from "./_components/trade-actions";
+import { PendingPasteBanner } from "./_components/pending-paste-banner";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pendiente",
@@ -14,6 +15,17 @@ const STATUS_LABEL: Record<string, string> = {
   rejected: "Rechazada",
   cancelled: "Cancelada",
   completed: "Completada",
+};
+
+type ItemRow = {
+  id: string;
+  direction: "offer" | "request";
+  quantity: number;
+  sticker_id: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  stickers: any;
+  // pasted_at agregado en migración 0038
+  pasted_at?: string | null;
 };
 
 export default async function TradeDetailPage({
@@ -28,23 +40,36 @@ export default async function TradeDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: trade } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: trade } = (await (supabase as any)
     .from("trades")
     .select(
-      "id, from_user, to_user, status, message, created_at, updated_at",
+      "id, from_user, to_user, status, message, created_at, updated_at, auto_pasted",
     )
     .eq("id", id)
-    .maybeSingle();
+    .maybeSingle()) as {
+    data: {
+      id: string;
+      from_user: string;
+      to_user: string;
+      status: string;
+      message: string | null;
+      created_at: string;
+      updated_at: string;
+      auto_pasted: boolean | null;
+    } | null;
+  };
   if (!trade) notFound();
 
   const isFrom = trade.from_user === user.id;
   const otherUserId = isFrom ? trade.to_user : trade.from_user;
 
-  const [{ data: items }, { data: profiles }] = await Promise.all([
-    supabase
+  const [{ data: itemsRaw }, { data: profiles }] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
       .from("trade_items")
       .select(
-        "id, direction, quantity, sticker_id, stickers(code, number, name, team, type)",
+        "id, direction, quantity, sticker_id, pasted_at, stickers(code, number, name, team, type)",
       )
       .eq("trade_id", id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,6 +78,8 @@ export default async function TradeDetailPage({
       .select("id, username, display_name, city, avatar_url, phone")
       .in("id", [trade.from_user, trade.to_user]),
   ]);
+
+  const items: ItemRow[] = (itemsRaw ?? []) as ItemRow[];
 
   type ProfileRow = {
     id: string;
@@ -67,8 +94,60 @@ export default async function TradeDetailPage({
   );
   const other = pMap.get(otherUserId);
 
-  const offered = (items ?? []).filter((i) => i.direction === "offer");
-  const requested = (items ?? []).filter((i) => i.direction === "request");
+  // Cargar cantidades actuales de ambos participantes para los sticker_ids del trade
+  // Solo nos importa validar disponibilidad si el trade NO está completed/rejected/cancelled
+  const isLiveTrade = trade.status === "pending" || trade.status === "accepted";
+  const stickerIds = [...new Set(items.map((i) => i.sticker_id))];
+
+  let qtyByUser: Record<string, Map<string, number>> = {};
+  if (isLiveTrade && stickerIds.length > 0) {
+    const { data: us } = await supabase
+      .from("user_stickers")
+      .select("user_id, sticker_id, quantity")
+      .in("user_id", [trade.from_user, trade.to_user])
+      .in("sticker_id", stickerIds);
+    qtyByUser = { [trade.from_user]: new Map(), [trade.to_user]: new Map() };
+    (us ?? []).forEach((r) => {
+      qtyByUser[r.user_id]?.set(r.sticker_id, r.quantity ?? 0);
+    });
+  }
+
+  // Marcar cada item con su disponibilidad real (giver tiene cantidad >= quantity?)
+  type EnrichedItem = ItemRow & { available: number; isAvailable: boolean };
+  const enriched: EnrichedItem[] = items.map((it) => {
+    if (!isLiveTrade) return { ...it, available: it.quantity, isAvailable: true };
+    const giver = it.direction === "offer" ? trade.from_user : trade.to_user;
+    const have = qtyByUser[giver]?.get(it.sticker_id) ?? 0;
+    return { ...it, available: have, isAvailable: have >= it.quantity };
+  });
+
+  const offered = enriched.filter((i) => i.direction === "offer");
+  const requested = enriched.filter((i) => i.direction === "request");
+
+  // Counts AJUSTADOS — solo cuentan items disponibles
+  const offeredAvailableCount = offered
+    .filter((i) => i.isAvailable)
+    .reduce((s, i) => s + i.quantity, 0);
+  const requestedAvailableCount = requested
+    .filter((i) => i.isAvailable)
+    .reduce((s, i) => s + i.quantity, 0);
+
+  const offeredTotalCount = offered.reduce((s, i) => s + i.quantity, 0);
+  const requestedTotalCount = requested.reduce((s, i) => s + i.quantity, 0);
+
+  const hasUnavailableItems =
+    offered.some((i) => !i.isAvailable) || requested.some((i) => !i.isAvailable);
+  const canComplete =
+    trade.status === "accepted" && !hasUnavailableItems;
+
+  // Pendientes de pegar (solo si completed Y auto_pasted=false)
+  // El receiver soy yo cuando: en items 'offer' soy el to_user, en items 'request' soy el from_user
+  const myPendingItems = enriched.filter((it) => {
+    if (trade.status !== "completed") return false;
+    if (it.pasted_at) return false; // ya pegado
+    const receiver = it.direction === "offer" ? trade.to_user : trade.from_user;
+    return receiver === user.id;
+  });
 
   return (
     <div className="space-y-8">
@@ -100,11 +179,35 @@ export default async function TradeDetailPage({
         </blockquote>
       )}
 
+      {hasUnavailableItems && isLiveTrade && (
+        <div
+          className="rounded-xl border-2 p-4 flex items-start gap-3"
+          style={{
+            background: "color-mix(in oklab, var(--panini-red) 8%, var(--card))",
+            borderColor: "color-mix(in oklab, var(--panini-red) 40%, transparent)",
+          }}
+        >
+          <AlertTriangle className="size-5 text-[var(--panini-red)] shrink-0 mt-0.5" />
+          <div className="text-sm space-y-1">
+            <p className="font-semibold">Algunos cromos ya no están disponibles</p>
+            <p className="text-muted-foreground">
+              Alguno de los dos despegó cromos prometidos en este intercambio.
+              Los aparecen tachados abajo y los conteos del header solo
+              consideran lo que sí se puede entregar. No se puede completar
+              hasta que ambos repropongan o se ajuste la propuesta.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
         <Column
           title={isFrom ? "Tú ofreces" : "Te ofrecen"}
           accent="gold"
           items={offered}
+          availableCount={offeredAvailableCount}
+          totalCount={offeredTotalCount}
+          isLiveTrade={isLiveTrade}
         />
         <div className="hidden lg:flex items-center justify-center text-muted-foreground">
           <ArrowRight className="size-5" />
@@ -113,8 +216,26 @@ export default async function TradeDetailPage({
           title={isFrom ? "Tú pides" : "Te piden"}
           accent="pitch"
           items={requested}
+          availableCount={requestedAvailableCount}
+          totalCount={requestedTotalCount}
+          isLiveTrade={isLiveTrade}
         />
       </div>
+
+      {/* Banner de pendientes (solo si yo soy receiver y hay items por pegar) */}
+      {myPendingItems.length > 0 && (
+        <PendingPasteBanner
+          tradeId={trade.id}
+          items={myPendingItems.map((it) => ({
+            id: it.id,
+            sticker_id: it.sticker_id,
+            quantity: it.quantity,
+            code: it.stickers?.code ?? null,
+            name: it.stickers?.name ?? "",
+            team: it.stickers?.team ?? null,
+          }))}
+        />
+      )}
 
       {/* WhatsApp del otro participante (si compartió teléfono) */}
       {(() => {
@@ -123,11 +244,9 @@ export default async function TradeDetailPage({
         const myName = me?.display_name ?? `@${me?.username ?? "yo"}`;
         const tradeUrl = `${SITE_URL}/trades/${trade.id}`;
 
-        // Mensaje según el estado del trade
         let msg: string;
         let ctaLabel: string;
         if (trade.status === "accepted") {
-          // Trade aceptado por ambas partes — sugerir encuentro
           msg = [
             `¡Hola! Soy ${myName} desde Panini·JD.`,
             "",
@@ -138,10 +257,9 @@ export default async function TradeDetailPage({
           ].join("\n");
           ctaLabel = "Acordar encuentro";
         } else if (trade.status === "completed") {
-          msg = `¡Hola ${myName ? "" : ""}! Soy ${myName} desde Panini·JD. Gracias por el intercambio.\n\n${tradeUrl}`;
+          msg = `¡Hola! Soy ${myName} desde Panini·JD. Gracias por el intercambio.\n\n${tradeUrl}`;
           ctaLabel = "Escribir por WhatsApp";
         } else {
-          // pending: mensaje genérico de propuesta
           msg = isFrom
             ? `¡Hola! Soy ${myName} desde Panini·JD. Te propuse un intercambio, ¿qué dices?\n\n${tradeUrl}`
             : `¡Hola! Soy ${myName} desde Panini·JD. Te respondo sobre tu propuesta de intercambio.\n\n${tradeUrl}`;
@@ -166,9 +284,16 @@ export default async function TradeDetailPage({
 
       <TradeActions
         tradeId={trade.id}
-        status={trade.status}
+        status={trade.status as "pending" | "accepted" | "rejected" | "cancelled" | "completed"}
         isFrom={isFrom}
         isTo={!isFrom}
+        canComplete={canComplete}
+        receivingCount={
+          isFrom ? requestedAvailableCount : offeredAvailableCount
+        }
+        givingCount={
+          isFrom ? offeredAvailableCount : requestedAvailableCount
+        }
       />
     </div>
   );
@@ -178,31 +303,50 @@ function Column({
   title,
   accent,
   items,
+  availableCount,
+  totalCount,
+  isLiveTrade,
 }: {
   title: string;
   accent: "pitch" | "gold";
   items: Array<{
     id: string;
     quantity: number;
-    stickers:
-      | {
-          code: string | null;
-          number: number;
-          name: string;
-          team: string | null;
-          type: "normal" | "shiny" | "legend" | "special";
-        }
-      | null;
+    available: number;
+    isAvailable: boolean;
+    pasted_at?: string | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    stickers: any;
   }>;
+  availableCount: number;
+  totalCount: number;
+  isLiveTrade: boolean;
 }) {
   const bar = accent === "pitch" ? "bg-[var(--panini-blue)]" : "bg-[var(--gold)]";
   return (
     <div className="border rounded-xl bg-card overflow-hidden flex flex-col">
       <div className={`h-1 w-full ${bar}`} />
       <div className="p-5 flex-1">
-        <h2 className="font-display text-xl font-semibold mb-4 tracking-tight">
-          {title}
-        </h2>
+        <div className="flex items-baseline justify-between gap-2 mb-4">
+          <h2 className="font-display text-xl font-semibold tracking-tight">
+            {title}
+          </h2>
+          {isLiveTrade && availableCount !== totalCount ? (
+            <span className="font-mono text-xs text-muted-foreground tabular">
+              <span className="text-[var(--panini-red)] font-semibold">
+                {availableCount}
+              </span>
+              <span className="line-through opacity-60 ml-1">
+                de {totalCount}
+              </span>
+            </span>
+          ) : (
+            <span className="font-mono text-sm text-muted-foreground tabular">
+              {totalCount} {totalCount === 1 ? "cromo" : "cromos"}
+            </span>
+          )}
+        </div>
+
         {items.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground text-center border rounded-md">
             Nada en esta dirección.
@@ -215,10 +359,16 @@ function Column({
                 it.stickers?.code === "0" ||
                 it.stickers?.code === "00" ||
                 it.stickers?.code === "3";
+              const unavailable = isLiveTrade && !it.isAvailable;
               return (
                 <li
                   key={it.id}
-                  className="relative rounded-lg overflow-hidden border bg-muted/30 group"
+                  className={`relative rounded-lg overflow-hidden border bg-muted/30 group transition-opacity ${unavailable ? "opacity-40" : ""}`}
+                  title={
+                    unavailable
+                      ? `Ya no disponible (queda ${it.available} de ${it.quantity})`
+                      : undefined
+                  }
                 >
                   <div
                     className="relative w-full"
@@ -244,12 +394,22 @@ function Column({
                         {it.quantity}
                       </span>
                     )}
+                    {unavailable && (
+                      <span className="absolute top-1 left-1 size-6 grid place-items-center rounded-full bg-[var(--panini-red)] text-white">
+                        <AlertTriangle className="size-3.5" />
+                      </span>
+                    )}
+                    {it.pasted_at && (
+                      <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[var(--gold)]/90 text-foreground uppercase tracking-wider">
+                        pegado
+                      </span>
+                    )}
                   </div>
                   <div className="px-1.5 py-1 border-t bg-card">
                     <p className="text-[10px] font-mono text-muted-foreground truncate">
                       {it.stickers?.code ?? `#${it.stickers?.number}`}
                     </p>
-                    <p className="text-[11px] font-medium truncate leading-tight">
+                    <p className={`text-[11px] font-medium truncate leading-tight ${unavailable ? "line-through" : ""}`}>
                       {it.stickers?.team ?? it.stickers?.name}
                     </p>
                   </div>
