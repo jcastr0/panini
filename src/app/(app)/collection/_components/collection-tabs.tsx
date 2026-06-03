@@ -172,19 +172,7 @@ export function CollectionTabs({
         {recent.list.length === 0 ? (
           <Empty title="No has agregado cromos esta semana" />
         ) : (
-          <>
-            <p className="text-sm text-muted-foreground mb-3">
-              {recent.window === "72h"
-                ? "Lo que pegaste o sumaste en las últimas 72 horas."
-                : "Esta semana no has pegado nada en las últimas 72h — te muestro los últimos 7 días."}
-            </p>
-            <TabBody
-              stickers={recent.list}
-              mode={viewMode}
-              variant="owned"
-              empty=""
-            />
-          </>
+          <RecentBody stickers={recent.list} mode={viewMode} window={recent.window} />
         )}
       </TabsContent>
     </Tabs>
@@ -376,6 +364,86 @@ function Empty({ title }: { title: string }) {
   return (
     <div className="text-center border-2 border-dashed rounded-xl py-16 px-6">
       <p className="font-display text-xl font-semibold">{title}</p>
+    </div>
+  );
+}
+
+/** Tiempo relativo en español: "hace 5 min", "hace 2 h", "hace 3 d". */
+function timeAgo(iso: string): string {
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "ahora";
+  if (diff < 3600) return `hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `hace ${Math.floor(diff / 3600)} h`;
+  return `hace ${Math.floor(diff / 86400)} d`;
+}
+
+/**
+ * Vista cronológica plana para la pestaña "Recientes" — ordenada por
+ * updatedAt desc sin agrupar por sección, con timestamp relativo.
+ */
+function RecentBody({
+  stickers,
+  mode,
+  window,
+}: {
+  stickers: CollectionSticker[];
+  mode: ViewMode;
+  window: "72h" | "7d";
+}) {
+  // Ya viene ordenado desc desde el parent useMemo, pero por si acaso:
+  const sorted = [...stickers].sort(
+    (a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
+  );
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {window === "72h"
+          ? "Lo que pegaste o sumaste en las últimas 72 horas — más nuevo primero."
+          : "Esta semana no pegaste nada en las últimas 72h, te muestro los últimos 7 días."}
+      </p>
+
+      {mode === "compact" ? (
+        <div className="flex flex-wrap gap-1.5">
+          {sorted.map((s) => (
+            <div key={s.id} className="inline-flex flex-col items-start gap-0.5">
+              <CodeChip
+                code={s.code ?? `#${s.number}`}
+                accent="var(--panini-blue)"
+                variant={s.qty > 1 ? "duplicate" : "owned"}
+                quantity={s.qty > 1 ? s.qty - 1 : undefined}
+                shiny={s.type === "shiny" || s.type === "legend"}
+              />
+              {s.updatedAt && (
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {timeAgo(s.updatedAt)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+          {sorted.map((s) => (
+            <div key={s.id} className="space-y-1">
+              <StickerCard
+                id={s.id}
+                code={s.code}
+                number={s.number}
+                name={s.name}
+                team={s.team}
+                type={s.type}
+                initialQuantity={s.qty}
+              />
+              {s.updatedAt && (
+                <p className="text-[10px] text-muted-foreground text-center font-mono">
+                  {timeAgo(s.updatedAt)}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
