@@ -140,14 +140,29 @@ export default async function TradeDetailPage({
   const canComplete =
     trade.status === "accepted" && !hasUnavailableItems;
 
-  // Pendientes de pegar (solo si completed Y auto_pasted=false)
+  // Pendientes de pegar (solo si completed y aún sin pegar)
   // El receiver soy yo cuando: en items 'offer' soy el to_user, en items 'request' soy el from_user
   const myPendingItems = enriched.filter((it) => {
     if (trade.status !== "completed") return false;
-    if (it.pasted_at) return false; // ya pegado
+    if (it.pasted_at) return false;
     const receiver = it.direction === "offer" ? trade.to_user : trade.from_user;
     return receiver === user.id;
   });
+
+  // Para cada pendiente, ¿ya tengo el cromo pegado en mi álbum (quantity > 0)?
+  // Si sí → muestro "ya en tu álbum, cerrar ritual" en vez de "Pegar".
+  let myCurrentQty = new Map<string, number>();
+  if (myPendingItems.length > 0) {
+    const ids = myPendingItems.map((it) => it.sticker_id);
+    const { data: mineNow } = await supabase
+      .from("user_stickers")
+      .select("sticker_id, quantity")
+      .eq("user_id", user.id)
+      .in("sticker_id", ids);
+    myCurrentQty = new Map(
+      (mineNow ?? []).map((r) => [r.sticker_id, r.quantity ?? 0]),
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -233,6 +248,7 @@ export default async function TradeDetailPage({
             code: it.stickers?.code ?? null,
             name: it.stickers?.name ?? "",
             team: it.stickers?.team ?? null,
+            alreadyInAlbum: (myCurrentQty.get(it.sticker_id) ?? 0) > 0,
           }))}
         />
       )}

@@ -14,6 +14,15 @@ export async function setStickerQuantity(stickerId: string, quantity: number) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "No autenticado" };
 
+  // Cantidad PREVIA (para detectar si esto es un "pegar" — pasar de 0 a >=1)
+  const { data: previous } = await supabase
+    .from("user_stickers")
+    .select("quantity")
+    .eq("user_id", user.id)
+    .eq("sticker_id", stickerId)
+    .maybeSingle();
+  const previousQty = previous?.quantity ?? 0;
+
   if (quantity === 0) {
     const { error } = await supabase
       .from("user_stickers")
@@ -30,10 +39,46 @@ export async function setStickerQuantity(stickerId: string, quantity: number) {
     if (error) return { error: error.message };
   }
 
-  // El layout cubre todas las rutas hijas (/album, /album/grupo/*, /album/apertura, etc.)
+  // Si el user "pegó" el cromo (subió quantity y antes era 0), cerramos
+  // cualquier trade_item pendiente del mismo sticker donde el user es el
+  // receptor. Evita que el banner "Cromos por pegar" siga mostrando algo
+  // que el user ya pegó manualmente, y evita el doble-conteo al hacer
+  // click en "Pegar este" del banner después.
+  if (previousQty === 0 && quantity >= 1) {
+    // Buscar trade_items pendientes (status completed, pasted_at NULL,
+    // user es receptor según direction)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: pending } = await (supabase as any)
+      .from("trade_items")
+      .select("id, direction, trade_id, trades!inner(status, from_user, to_user)")
+      .eq("sticker_id", stickerId)
+      .is("pasted_at", null)
+      .eq("trades.status", "completed");
+
+    const idsToClose: string[] = [];
+    for (const it of (pending ?? []) as Array<{
+      id: string;
+      direction: "offer" | "request";
+      trades: { from_user: string; to_user: string };
+    }>) {
+      const receiver =
+        it.direction === "offer" ? it.trades.to_user : it.trades.from_user;
+      if (receiver === user.id) idsToClose.push(it.id);
+    }
+
+    if (idsToClose.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
+        .from("trade_items")
+        .update({ pasted_at: new Date().toISOString() })
+        .in("id", idsToClose);
+    }
+  }
+
   revalidatePath("/album", "layout");
   revalidatePath("/collection");
   revalidatePath("/dashboard");
+  revalidatePath("/trades", "layout");
   return { success: true };
 }
 

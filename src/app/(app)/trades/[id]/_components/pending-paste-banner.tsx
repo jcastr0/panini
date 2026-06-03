@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 import { stickerImagePath } from "@/lib/sticker-image";
 import { pasteTradeItem, pasteRemainingTradeItems } from "../../actions";
@@ -14,12 +14,24 @@ export type PendingItem = {
   code: string | null;
   name: string;
   team: string | null;
+  /** True si el user ya tiene quantity >= 1 en su álbum (lo pegó por fuera del trade). */
+  alreadyInAlbum: boolean;
 };
 
 /**
  * Banner que aparece en el detalle del trade COMPLETED cuando el receiver
  * eligió "no pegar automáticamente". Muestra la lista de cromos pendientes
  * y permite pegarlos uno por uno (ritual) o todos de una.
+ *
+ * Para los que ya tiene en su álbum (los pegó manualmente desde /album),
+ * muestra "Ya en tu álbum · Cerrar ritual" → al click solo marca el
+ * trade_item como pegado SIN sumar quantity (eso ya lo hizo).
+ *
+ * El auto-cierre del ritual cuando se pega desde /album lo hace ya el
+ * server action setStickerQuantity, así que en condiciones normales el
+ * banner no debería mostrar items con alreadyInAlbum=true. Esta UI es
+ * el fallback de seguridad para los pocos casos donde la sincronización
+ * llegara tarde, o trades viejos pre-feature.
  */
 export function PendingPasteBanner({
   tradeId,
@@ -41,7 +53,6 @@ export function PendingPasteBanner({
       }
       setPastedNow((prev) => new Set(prev).add(itemId));
       toast.success("Cromo pegado ✨");
-      // No refresh inmediato — dejamos que el user pegue de a uno con animación
     });
   }
 
@@ -74,6 +85,9 @@ export function PendingPasteBanner({
     );
   }
 
+  const reallyPending = visibleItems.filter((it) => !it.alreadyInAlbum);
+  const alreadyInAlbum = visibleItems.filter((it) => it.alreadyInAlbum);
+
   return (
     <div
       className="rounded-xl border-2 p-5 space-y-4"
@@ -86,12 +100,14 @@ export function PendingPasteBanner({
         <div>
           <p className="font-display font-semibold flex items-center gap-2">
             <Sparkles className="size-4 text-[var(--gold)]" />
-            Tienes {visibleItems.length} cromo
-            {visibleItems.length === 1 ? "" : "s"} por pegar
+            Tienes {visibleItems.length} cromo{visibleItems.length === 1 ? "" : "s"} por pegar
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Pégalos uno por uno como en el álbum físico, o usa el botón para
-            pegarlos todos de una.
+            {alreadyInAlbum.length > 0 && reallyPending.length > 0
+              ? `${alreadyInAlbum.length} ya están en tu álbum (solo cierra el ritual), ${reallyPending.length} por pegar.`
+              : alreadyInAlbum.length > 0
+                ? "Ya los tienes en tu álbum, solo cierra el ritual del trade."
+                : "Pégalos uno por uno como en el álbum físico, o usa el botón para pegarlos todos."}
           </p>
         </div>
         <button
@@ -100,13 +116,14 @@ export function PendingPasteBanner({
           disabled={pending}
           className="inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-4 h-9 text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
-          <Check className="size-4" /> Pegar todos
+          <Check className="size-4" /> Cerrar todos
         </button>
       </div>
 
       <ul className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
         {visibleItems.map((it) => {
           const img = stickerImagePath(it.code);
+          const isAlready = it.alreadyInAlbum;
           return (
             <li
               key={it.id}
@@ -128,6 +145,14 @@ export function PendingPasteBanner({
                     </span>
                   </div>
                 )}
+                {isAlready && (
+                  <span
+                    className="absolute top-1 left-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--panini-blue)] text-white text-[9px] font-semibold uppercase tracking-wider"
+                    title="Este cromo ya está en tu álbum"
+                  >
+                    <BadgeCheck className="size-3" /> En álbum
+                  </span>
+                )}
               </div>
               <div className="p-2 space-y-1.5">
                 <p className="text-[10px] font-mono text-muted-foreground truncate">
@@ -140,9 +165,21 @@ export function PendingPasteBanner({
                   type="button"
                   onClick={() => pasteOne(it.id)}
                   disabled={pending}
-                  className="w-full inline-flex items-center justify-center gap-1 rounded-md bg-[var(--gold)] text-foreground px-2 h-7 text-[11px] font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  className={`w-full inline-flex items-center justify-center gap-1 rounded-md px-2 h-7 text-[11px] font-semibold disabled:opacity-50 transition-opacity ${
+                    isAlready
+                      ? "bg-[var(--panini-blue)] text-white hover:opacity-90"
+                      : "bg-[var(--gold)] text-foreground hover:opacity-90"
+                  }`}
                 >
-                  <Sparkles className="size-3" /> Pegar
+                  {isAlready ? (
+                    <>
+                      <BadgeCheck className="size-3" /> Cerrar
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="size-3" /> Pegar
+                    </>
+                  )}
                 </button>
               </div>
             </li>
