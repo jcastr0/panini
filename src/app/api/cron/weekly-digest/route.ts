@@ -42,10 +42,12 @@ export async function GET(req: NextRequest) {
   if (!albumId) {
     return NextResponse.json({ error: "no-active-album" }, { status: 500 });
   }
+  // Total excluyendo legends (son extras, no cuentan en el % del álbum)
   const { count: totalAlbum } = await sb
     .from("stickers")
     .select("*", { count: "exact", head: true })
-    .eq("album_id", albumId);
+    .eq("album_id", albumId)
+    .neq("type", "legend");
 
   let sent = 0;
   let skipped = 0;
@@ -82,11 +84,13 @@ export async function GET(req: NextRequest) {
         .eq("user_id", userId)
         .eq("kind", "duplicate_available")
         .gte("created_at", weekAgo),
+      // totalOwned: excluye legends (son extras)
       sb
         .from("user_stickers")
-        .select("*", { count: "exact", head: true })
+        .select("*, stickers!inner(type)", { count: "exact", head: true })
         .eq("user_id", userId)
-        .gte("quantity", 1),
+        .gte("quantity", 1)
+        .neq("stickers.type", "legend"),
     ]);
 
     // Nuevos pegados y repetidos: aproximamos con updated_at en user_stickers

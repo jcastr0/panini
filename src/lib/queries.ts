@@ -48,32 +48,37 @@ export async function getUserStats(userId: string) {
     return { total: 0, owned: 0, missing: 0, duplicates: 0, percent: 0 };
   }
 
-  // Total via head:true count — Supabase REST trunca .select() a 1000
-  // filas por default. El álbum ya pasó de 1000 con las legends.
+  // Total = stickers NO-legend del álbum (las legends son extras, no cuentan).
   const { count: totalCount } = await supabase
     .from("stickers")
     .select("*", { count: "exact", head: true })
-    .eq("album_id", album.id);
+    .eq("album_id", album.id)
+    .neq("type", "legend");
   const total = totalCount ?? 0;
 
-  // user_stickers necesita la quantity por fila (para duplicates).
-  // Paginamos para bypassear el cap server-side de 1000 filas.
-  const rows = await paginate<{ sticker_id: string; quantity: number }>(
+  // user_stickers necesita la quantity por fila (para duplicates) y
+  // filtrar legends. Hacemos JOIN para excluir tipo legend.
+  const rows = await paginate<{
+    sticker_id: string;
+    quantity: number;
+    stickers: { type: string } | null;
+  }>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (from, to) =>
-      supabase
+      (supabase as any)
         .from("user_stickers")
-        .select("sticker_id, quantity")
+        .select("sticker_id, quantity, stickers(type)")
         .eq("user_id", userId)
         .gt("quantity", 0)
         .range(from, to),
   );
 
-  const owned = rows.length;
+  // Filtrar legends en JS (Supabase no soporta filtros sobre embeds en .select)
+  const nonLegend = rows.filter((r) => r.stickers?.type !== "legend");
+
+  const owned = nonLegend.length;
   const duplicates =
-    rows?.reduce(
-      (acc, r) => acc + Math.max(0, (r.quantity ?? 0) - 1),
-      0,
-    ) ?? 0;
+    nonLegend.reduce((acc, r) => acc + Math.max(0, (r.quantity ?? 0) - 1), 0) ?? 0;
   const missing = Math.max(0, total - owned);
   const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
 
@@ -161,11 +166,12 @@ export async function getProgressForUsers(userIds: string[]) {
   const album = await getActiveAlbum();
   if (!album) return result;
 
-  // Total via head:true count — evita el cap de 1000 filas del .select()
+  // Total = stickers NO-legend del álbum activo (legends son extras)
   const { count: totalCount } = await supabase
     .from("stickers")
     .select("*", { count: "exact", head: true })
-    .eq("album_id", album.id);
+    .eq("album_id", album.id)
+    .neq("type", "legend");
   const total = totalCount ?? 0;
 
   // Intento 1: RPC con GROUP BY (1 round-trip). Si la función no existe aún
@@ -191,14 +197,15 @@ export async function getProgressForUsers(userIds: string[]) {
     return result;
   }
 
-  // Fallback legacy — N head:true counts en paralelo
+  // Fallback legacy — N head:true counts en paralelo, JOIN para excluir legends
   const counts = await Promise.all(
     userIds.map(async (uid) => {
       const { count } = await supabase
         .from("user_stickers")
-        .select("*", { count: "exact", head: true })
+        .select("*, stickers!inner(type)", { count: "exact", head: true })
         .eq("user_id", uid)
-        .gt("quantity", 0);
+        .gt("quantity", 0)
+        .neq("stickers.type", "legend");
       return [uid, count ?? 0] as const;
     }),
   );
