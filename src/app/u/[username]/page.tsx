@@ -63,9 +63,11 @@ export default async function PublicProfilePage({
     getLastActivity(profile.id),
   ]);
 
+  // Total y owned generales — excluimos legends (son extras, no cuentan en el %)
   let total = 0;
   let owned = 0;
-  sectionStats.forEach((s) => {
+  sectionStats.forEach((s, key) => {
+    if (key === "legends") return;
     total += s.total;
     owned += s.owned;
   });
