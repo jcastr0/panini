@@ -137,8 +137,9 @@ export default async function TradeDetailPage({
 
   const hasUnavailableItems =
     offered.some((i) => !i.isAvailable) || requested.some((i) => !i.isAvailable);
-  const canComplete =
-    trade.status === "accepted" && !hasUnavailableItems;
+  // canProceed = trade está vivo Y todos sus items siguen siendo válidos.
+  // Aplica tanto a Aceptar (pending) como a Completar (accepted).
+  const canProceed = isLiveTrade && !hasUnavailableItems;
 
   // Pendientes de pegar (solo si completed y aún sin pegar)
   // El receiver soy yo cuando: en items 'offer' soy el to_user, en items 'request' soy el from_user
@@ -303,7 +304,7 @@ export default async function TradeDetailPage({
         status={trade.status as "pending" | "accepted" | "rejected" | "cancelled" | "completed"}
         isFrom={isFrom}
         isTo={!isFrom}
-        canComplete={canComplete}
+        canComplete={canProceed}
         receivingCount={
           isFrom ? requestedAvailableCount : offeredAvailableCount
         }
