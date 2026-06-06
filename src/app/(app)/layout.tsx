@@ -6,6 +6,7 @@ import { MobileTabBar } from "./_components/mobile-tab-bar";
 import { NotificationBell } from "./_components/notification-bell";
 import { AppFooter, AppFooterMobile } from "./_components/app-footer";
 import { PhoneCampaignBanner } from "./_components/phone-campaign-banner";
+import { ScrollToHash } from "./_components/scroll-to-hash";
 
 export default async function AppLayout({
   children,
@@ -90,6 +91,7 @@ export default async function AppLayout({
         </div>
       </header>
       <PhoneCampaignBanner phoneMissing={!p?.phone} />
+      <ScrollToHash />
       <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full pb-24 md:pb-8">
         {children}
         <AppFooterMobile />

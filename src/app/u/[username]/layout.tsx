@@ -8,6 +8,7 @@ import { NotificationBell } from "@/app/(app)/_components/notification-bell";
 import { AppFooter, AppFooterMobile } from "@/app/(app)/_components/app-footer";
 import { SupportButton } from "@/app/(app)/_components/support-button";
 import { PhoneCampaignBanner } from "@/app/(app)/_components/phone-campaign-banner";
+import { ScrollToHash } from "@/app/(app)/_components/scroll-to-hash";
 
 export default async function PublicLayout({
   children,
@@ -94,6 +95,7 @@ export default async function PublicLayout({
           </div>
         </header>
         <PhoneCampaignBanner phoneMissing={!p?.phone} />
+        <ScrollToHash />
         <main className="flex-1 max-w-6xl mx-auto px-6 py-8 w-full pb-24 md:pb-8">
           {children}
           <AppFooterMobile />
