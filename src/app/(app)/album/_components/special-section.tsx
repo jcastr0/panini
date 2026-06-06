@@ -79,7 +79,9 @@ export function SpecialSection({
                 return (
                   <div
                     key={s.id}
+                    id={s.code ?? undefined}
                     className={cn(
+                      "scroll-mt-24",
                       isHorizontalApertura && "col-span-2 sm:col-span-2",
                     )}
                   >

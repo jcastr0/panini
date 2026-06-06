@@ -163,7 +163,7 @@ function Page1Grid({
         </div>
       )}
       {stickers.map((s) => (
-        <div key={s.id}>
+        <div key={s.id} id={s.code ?? undefined} className="scroll-mt-24">
           <StickerCardSlot s={s} qtyMap={qtyMap} readOnly={readOnly} legendQtyMap={legendQtyMap} />
         </div>
       ))}
@@ -292,7 +292,11 @@ function Page2Grid({
     }
     const isTeamPhoto = i === teamPhotoIdx;
     items.push(
-      <div key={s.id} className={isTeamPhoto ? "sm:col-span-2" : undefined}>
+      <div
+        key={s.id}
+        id={s.code ?? undefined}
+        className={`scroll-mt-24 ${isTeamPhoto ? "sm:col-span-2" : ""}`}
+      >
         <StickerCardSlot
           s={s}
           qtyMap={qtyMap}

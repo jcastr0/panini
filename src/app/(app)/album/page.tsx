@@ -13,6 +13,7 @@ import { SECTION_ORDER } from "@/lib/album-config";
 import { ProgressRing } from "./_components/progress-ring";
 import { SectionTile } from "./_components/section-tile";
 import { AlbumOwnerTag } from "./_components/album-owner-tag";
+import { AlbumSearchBox } from "./_components/album-search-box";
 
 export default async function AlbumIndexPage() {
   const supabase = await createClient();
@@ -84,6 +85,10 @@ export default async function AlbumIndexPage() {
             )}
           </div>
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <AlbumSearchBox />
       </section>
 
       <section className="space-y-3">
