@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, X, Ban, CheckCheck, AlertTriangle, Wrench } from "lucide-react";
+import { Check, X, Ban, CheckCheck, AlertTriangle, Wrench, Clock, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -96,8 +96,45 @@ export function TradeActions({
     return null;
   }
 
+  // Mensaje contextual según el estado y el rol del usuario
+  let statusHint: { icon: React.ReactNode; title: string; body: string } | null = null;
+  if (status === "pending" && isFrom) {
+    statusHint = {
+      icon: <Clock className="size-5 text-[var(--panini-blue)]" />,
+      title: "Esperando que el otro acepte la propuesta",
+      body: "No puedes marcar como completada hasta que la otra persona acepte el trade. Si ya hicieron el cambio físico, pídele por WhatsApp que entre a aceptarlo, o cancela esta propuesta y vuelve a armarla cuando se reencuentren.",
+    };
+  } else if (status === "pending" && isTo) {
+    statusHint = {
+      icon: <Info className="size-5 text-[var(--panini-blue)]" />,
+      title: "Te están proponiendo este intercambio",
+      body: "Si te interesa, dale Aceptar. Después cualquiera de los dos puede marcarlo como completado cuando hayan hecho el cambio físico.",
+    };
+  } else if (status === "accepted") {
+    statusHint = {
+      icon: <CheckCheck className="size-5 text-[var(--gold)]" />,
+      title: "Trade aceptado — listo para completarse",
+      body: "Cuando hagan el intercambio físico, cualquiera de los dos puede marcarlo como completada. Puedes coordinarse el encuentro por WhatsApp.",
+    };
+  }
+
   return (
-    <div className="border rounded-xl bg-card p-5 flex flex-wrap items-center justify-end gap-2">
+    <div className="border rounded-xl bg-card p-5 space-y-4">
+      {statusHint && (
+        <div className="flex items-start gap-3">
+          <span className="shrink-0 mt-0.5">{statusHint.icon}</span>
+          <div className="space-y-1">
+            <p className="font-display font-semibold leading-tight">
+              {statusHint.title}
+            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {statusHint.body}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
       {/* Botón Ajustar — visible solo si canComplete=false (hay desbalance) */}
       {!canComplete && (
         <Button
@@ -151,6 +188,7 @@ export function TradeActions({
           <CheckCheck className="mr-1 size-4" /> Marcar como completada
         </Button>
       )}
+      </div>
 
       {/* Dialog Ajustar (reconcile) */}
       <ConfirmDialog
