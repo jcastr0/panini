@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Sparkles } from "lucide-react";
+import { Search, X, Sparkles, Check, Copy } from "lucide-react";
 
 type Hit = {
   code: string;
@@ -12,6 +12,7 @@ type Hit = {
   page: number | null;
   name: string;
   url: string;
+  qty: number;
 };
 
 /**
@@ -158,41 +159,82 @@ export function AlbumSearchBox() {
             )}
             {results.length > 0 && (
               <ul role="listbox" className="space-y-0.5">
-                {results.map((r, i) => (
-                  <li
-                    key={r.url}
-                    role="option"
-                    aria-selected={i === activeIdx}
-                    onMouseDown={(e) => {
-                      // Evita perder focus del input antes del click
-                      e.preventDefault();
-                    }}
-                    onClick={() => goTo(r.url)}
-                    onMouseEnter={() => setActiveIdx(i)}
-                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-sm transition-colors ${
-                      i === activeIdx
-                        ? "bg-muted/80"
-                        : "hover:bg-muted/40"
-                    }`}
-                  >
-                    <span className="font-mono font-semibold text-[var(--panini-blue)] min-w-[3.5rem]">
-                      {r.code}
-                    </span>
-                    <span className="flex-1 min-w-0">
-                      <span className="block truncate">{r.name}</span>
-                      <span className="block text-[11px] text-muted-foreground truncate">
-                        {r.team
-                          ? r.team
-                          : r.type === "legend"
-                            ? "Legend"
-                            : (r.group_code ?? "")}
+                {results.map((r, i) => {
+                  const status =
+                    r.qty >= 2 ? "duplicate" : r.qty === 1 ? "owned" : "missing";
+                  return (
+                    <li
+                      key={r.url}
+                      role="option"
+                      aria-selected={i === activeIdx}
+                      onMouseDown={(e) => {
+                        // Evita perder focus del input antes del click
+                        e.preventDefault();
+                      }}
+                      onClick={() => goTo(r.url)}
+                      onMouseEnter={() => setActiveIdx(i)}
+                      className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-sm transition-colors ${
+                        i === activeIdx ? "bg-muted/80" : "hover:bg-muted/40"
+                      }`}
+                    >
+                      {/* Estado visual: tienes / repetido / no tienes */}
+                      <span
+                        className={`size-7 rounded-full grid place-items-center shrink-0 ${
+                          status === "duplicate"
+                            ? "bg-[var(--gold)]/15 text-[color:var(--gold)]"
+                            : status === "owned"
+                              ? "bg-[var(--panini-blue)]/15 text-[var(--panini-blue)]"
+                              : "bg-muted text-muted-foreground"
+                        }`}
+                        title={
+                          status === "duplicate"
+                            ? `Repetido (x${r.qty})`
+                            : status === "owned"
+                              ? "Lo tienes"
+                              : "Te falta"
+                        }
+                      >
+                        {status === "duplicate" ? (
+                          <span className="text-[10px] font-bold tabular leading-none">
+                            ×{r.qty}
+                          </span>
+                        ) : status === "owned" ? (
+                          <Check className="size-3.5" strokeWidth={3} />
+                        ) : (
+                          <Copy className="size-3.5 rotate-180" />
+                        )}
                       </span>
-                    </span>
-                    {(r.type === "shiny" || r.type === "legend") && (
-                      <Sparkles className="size-3.5 text-[var(--gold)] shrink-0" />
-                    )}
-                  </li>
-                ))}
+                      <span className="font-mono font-semibold text-[var(--panini-blue)] min-w-[3.5rem]">
+                        {r.code}
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block truncate">{r.name}</span>
+                        <span className="block text-[11px] text-muted-foreground truncate">
+                          {r.team
+                            ? r.team
+                            : r.type === "legend"
+                              ? "Legend"
+                              : (r.group_code ?? "")}
+                          {status === "missing" && (
+                            <>
+                              {" "}
+                              · <span className="text-[var(--panini-red)] font-semibold">te falta</span>
+                            </>
+                          )}
+                          {status === "duplicate" && (
+                            <>
+                              {" "}
+                              · <span className="text-[var(--gold)] font-semibold">repetido</span>
+                            </>
+                          )}
+                        </span>
+                      </span>
+                      {(r.type === "shiny" || r.type === "legend") && (
+                        <Sparkles className="size-3.5 text-[var(--gold)] shrink-0" />
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

@@ -32,13 +32,14 @@ export async function GET(req: NextRequest) {
 
   const { data } = await supabase
     .from("stickers")
-    .select("code, team, group_code, type, page, name")
+    .select("id, code, team, group_code, type, page, name")
     .or(
       `code.ilike.${escaped}%,name.ilike.%${escNameLower}%,team.ilike.%${escNameLower}%`,
     )
     .limit(20);
 
   const rows = (data ?? []) as Array<{
+    id: string;
     code: string | null;
     team: string | null;
     group_code: string | null;
@@ -46,6 +47,18 @@ export async function GET(req: NextRequest) {
     page: number | null;
     name: string;
   }>;
+
+  // Cantidad que tiene el usuario de cada sticker matched
+  const stickerIds = rows.map((r) => r.id);
+  const qtyMap = new Map<string, number>();
+  if (stickerIds.length > 0) {
+    const { data: us } = await supabase
+      .from("user_stickers")
+      .select("sticker_id, quantity")
+      .eq("user_id", user.id)
+      .in("sticker_id", stickerIds);
+    (us ?? []).forEach((r) => qtyMap.set(r.sticker_id, r.quantity ?? 0));
+  }
 
   // Ranking: exacto > prefijo > contains
   const ranked = rows
@@ -70,6 +83,7 @@ export async function GET(req: NextRequest) {
     page: row.page,
     name: row.name,
     url: buildStickerUrl(row),
+    qty: qtyMap.get(row.id) ?? 0,
   }));
 
   return NextResponse.json({ results });
