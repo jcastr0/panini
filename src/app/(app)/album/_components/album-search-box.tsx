@@ -3,18 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Sparkles } from "lucide-react";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 type Hit = {
   code: string;
@@ -27,22 +15,25 @@ type Hit = {
 };
 
 /**
- * Buscador global en /album. Acepta cualquier código (MEX10, BRA13, FWC1,
- * CC5, 19, LEGARG17) o un nombre/equipo. Al elegir un resultado, navega
- * a la página del cromo con anchor para scroll.
+ * Búsqueda global en /album. Input + dropdown absolute (sin Popover) para
+ * no perder el focus en mobile (el Popover mueve el focus al abrir y eso
+ * cierra el teclado en cada tecla).
  */
 export function AlbumSearchBox() {
   const router = useRouter();
-  const [open, setOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState<Hit[]>([]);
   const [loading, setLoading] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
+  const [activeIdx, setActiveIdx] = React.useState(-1);
 
-  // Debounce fetch al endpoint
+  // Debounce fetch
   React.useEffect(() => {
     if (query.trim().length < 1) {
       setResults([]);
       setLoading(false);
+      setActiveIdx(-1);
       return;
     }
     setLoading(true);
@@ -56,6 +47,7 @@ export function AlbumSearchBox() {
         if (!r.ok) return;
         const json = (await r.json()) as { results?: Hit[] };
         setResults(json.results ?? []);
+        setActiveIdx(json.results && json.results.length > 0 ? 0 : -1);
       } catch {
         /* abort */
       } finally {
@@ -68,87 +60,126 @@ export function AlbumSearchBox() {
     };
   }, [query]);
 
+  // Cerrar dropdown al click fuera
+  React.useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", onClick);
+    return () => document.removeEventListener("pointerdown", onClick);
+  }, []);
+
   function goTo(url: string) {
     setOpen(false);
     setQuery("");
     setResults([]);
+    setActiveIdx(-1);
     router.push(url);
   }
 
   function clear() {
     setQuery("");
     setResults([]);
+    setActiveIdx(-1);
   }
 
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!open || results.length === 0) {
+      if (e.key === "Enter" && query.trim().length > 0 && results.length > 0) {
+        goTo(results[0].url);
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.min(results.length - 1, i + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.max(0, i - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const target = results[activeIdx >= 0 ? activeIdx : 0];
+      if (target) goTo(target.url);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
+  const showDropdown = open && query.trim().length > 0;
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className="group/search relative w-full flex items-center rounded-full border bg-card focus-within:ring-2 focus-within:ring-ring transition-shadow"
-        aria-label="Buscar cromo en el álbum"
-      >
+    <div ref={containerRef} className="relative">
+      <div className="relative w-full flex items-center rounded-full border bg-card focus-within:ring-2 focus-within:ring-ring transition-shadow">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         <input
           type="search"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            if (!open) setOpen(true);
+            setOpen(true);
           }}
-          onFocus={() => query && setOpen(true)}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKeyDown}
           placeholder="Busca un cromo (ej. MEX10, BRA13, Lozano)"
           className="w-full h-10 pl-10 pr-9 bg-transparent text-sm focus:outline-none rounded-full"
           autoComplete="off"
           spellCheck={false}
+          aria-label="Buscar cromo en el álbum"
         />
         {query && (
-          <span
-            role="button"
-            tabIndex={-1}
+          <button
+            type="button"
             aria-label="Limpiar"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              clear();
-            }}
+            onClick={clear}
             className="absolute right-2 top-1/2 -translate-y-1/2 size-7 rounded-full grid place-items-center hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="size-3.5" />
-          </span>
+          </button>
         )}
-      </PopoverTrigger>
+      </div>
 
-      <PopoverContent
-        align="start"
-        sideOffset={6}
-        className="p-0 w-[var(--anchor-width)] min-w-[18rem]"
-        style={{ width: "var(--anchor-width)" }}
-      >
-        <Command shouldFilter={false}>
-          <CommandList className="max-h-80">
+      {showDropdown && (
+        <div
+          className="absolute z-50 mt-1.5 w-full rounded-lg border bg-popover shadow-lg ring-1 ring-foreground/10 overflow-hidden"
+          // Importante: NO autofocus al abrir
+        >
+          <div className="max-h-80 overflow-y-auto py-1">
             {loading && (
-              <div className="px-3 py-4 text-xs text-muted-foreground">
+              <div className="px-3 py-3 text-xs text-muted-foreground">
                 Buscando…
               </div>
             )}
-            {!loading && query.trim().length > 0 && results.length === 0 && (
-              <CommandEmpty>
+            {!loading && results.length === 0 && (
+              <div className="px-3 py-3 text-xs text-muted-foreground">
                 No hay cromos con &quot;{query.trim()}&quot;.
-              </CommandEmpty>
+              </div>
             )}
             {results.length > 0 && (
-              <CommandGroup heading="Cromos">
-                {results.map((r) => (
-                  <CommandItem
+              <ul role="listbox" className="space-y-0.5">
+                {results.map((r, i) => (
+                  <li
                     key={r.url}
-                    value={r.code}
-                    onSelect={() => goTo(r.url)}
-                    className="cursor-pointer flex items-center gap-2"
+                    role="option"
+                    aria-selected={i === activeIdx}
+                    onMouseDown={(e) => {
+                      // Evita perder focus del input antes del click
+                      e.preventDefault();
+                    }}
+                    onClick={() => goTo(r.url)}
+                    onMouseEnter={() => setActiveIdx(i)}
+                    className={`flex items-center gap-2 px-3 py-2 cursor-pointer text-sm transition-colors ${
+                      i === activeIdx
+                        ? "bg-muted/80"
+                        : "hover:bg-muted/40"
+                    }`}
                   >
                     <span className="font-mono font-semibold text-[var(--panini-blue)] min-w-[3.5rem]">
                       {r.code}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block truncate text-sm">{r.name}</span>
+                      <span className="block truncate">{r.name}</span>
                       <span className="block text-[11px] text-muted-foreground truncate">
                         {r.team
                           ? r.team
@@ -157,21 +188,16 @@ export function AlbumSearchBox() {
                             : (r.group_code ?? "")}
                       </span>
                     </span>
-                    {r.type === "shiny" || r.type === "legend" ? (
+                    {(r.type === "shiny" || r.type === "legend") && (
                       <Sparkles className="size-3.5 text-[var(--gold)] shrink-0" />
-                    ) : null}
-                  </CommandItem>
+                    )}
+                  </li>
                 ))}
-              </CommandGroup>
+              </ul>
             )}
-            {query.trim().length === 0 && (
-              <div className="px-3 py-4 text-xs text-muted-foreground">
-                Escribe el código (MEX10, FWC1, CC5) o un nombre.
-              </div>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
