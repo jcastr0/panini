@@ -213,8 +213,7 @@ export function ProposeForm({
               onAdjust={(id, max, d) =>
                 adjust(requests, setRequests, id, max, d)
               }
-              ownerQty={(s) => s.theirs}
-              ownerLabel="tiene"
+              // Sin ownerQty/ownerLabel: la cantidad del OTRO es info privada.
             />
           </Panel>
         )}
@@ -405,10 +404,10 @@ function StickerPicker({
   selected: SelectMap;
   maxFor: (s: Sticker) => number;
   onAdjust: (id: string, max: number, delta: number) => void;
-  /** Cantidad TOTAL que tiene el dueño del lado (yo para offer, el otro para request). */
-  ownerQty: (s: Sticker) => number;
-  /** "tienes" o "tiene" — para personalizar el contexto. */
-  ownerLabel: string;
+  /** Si se pasa, muestra un pill con la cantidad propia. Solo se usa en el
+   *  lado del usuario actual — la cantidad del OTRO es info privada. */
+  ownerQty?: (s: Sticker) => number;
+  ownerLabel?: string;
 }) {
   if (stickers.length === 0) {
     return (
@@ -422,7 +421,8 @@ function StickerPicker({
       {stickers.map((s) => {
         const qty = selected[s.id] ?? 0;
         const max = maxFor(s);
-        const owned = ownerQty(s);
+        const owned = ownerQty?.(s);
+        const showOwned = owned != null && ownerLabel != null;
         const shiny = s.type === "shiny" || s.type === "legend";
         const img = stickerImagePath(s.code);
         return (
@@ -454,21 +454,23 @@ function StickerPicker({
                 {shiny && (
                   <Sparkles className="size-3 text-[var(--gold)] shrink-0" />
                 )}
-                <span
-                  className={cn(
-                    "shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded tabular",
-                    owned >= 2
-                      ? "bg-[var(--gold)]/15 text-[color:var(--gold)] font-semibold"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                  title={`${ownerLabel} ${owned}`}
-                >
-                  {ownerLabel} ×{owned}
-                </span>
+                {showOwned && owned >= 2 && (
+                  <span
+                    className="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded tabular bg-[var(--gold)]/15 text-[color:var(--gold)] font-semibold"
+                    title={`Tienes ${owned} en total: 1 pegada + ${owned - 1} repetida${owned - 1 === 1 ? "" : "s"}`}
+                  >
+                    +{owned - 1} repe
+                  </span>
+                )}
               </p>
               <p className="text-xs text-muted-foreground truncate font-mono">
                 {s.code ?? `#${String(s.number).padStart(3, "0")}`}
                 {s.team && s.team !== s.name && ` · ${s.name}`}
+                {showOwned && (
+                  <span className="ml-1 opacity-80">
+                    · tienes {owned}
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
