@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { AlertTriangle, ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { stickerImagePath } from "@/lib/sticker-image";
@@ -124,6 +124,118 @@ export default async function TradeDetailPage({
   const offered = enriched.filter((i) => i.direction === "offer");
   const requested = enriched.filter((i) => i.direction === "request");
 
+  // ─────────────────────────────────────────────────────────────────────
+  // Análisis PRIVADO: ¿con lo que YO recibo del trade completo equipo/página?
+  // Solo se calcula para el usuario actual (auth.uid()) y solo se renderiza
+  // en su columna. El otro participante NUNCA ve esta info.
+  // ─────────────────────────────────────────────────────────────────────
+  type Completion = { kind: "team" | "page"; label: string };
+  const myCompletions: Completion[] = [];
+  const myIncoming = enriched.filter((it) => {
+    const receiver = it.direction === "offer" ? trade.to_user : trade.from_user;
+    return receiver === user.id;
+  });
+  if (myIncoming.length > 0) {
+    // Sticker_ids que yo recibo
+    const incomingIds = new Set(myIncoming.map((it) => it.sticker_id));
+
+    // Cargar info de stickers + qué páginas/equipos tocan
+    const incomingTeams = new Set<string>();
+    const incomingPages = new Set<number>();
+    for (const it of myIncoming) {
+      const sticker = it.stickers;
+      if (!sticker) continue;
+      if (sticker.team && sticker.group_code) incomingTeams.add(sticker.team);
+      if (typeof sticker.page === "number") incomingPages.add(sticker.page);
+    }
+
+    // Cargar TODOS los stickers de esos equipos/páginas tocados
+    // Construimos un OR para Supabase: team.in.(...) OR page.in.(...)
+    const teamList = [...incomingTeams];
+    const pageList = [...incomingPages];
+
+    if (teamList.length > 0 || pageList.length > 0) {
+      const orConditions: string[] = [];
+      if (teamList.length > 0) {
+        const teamCsv = teamList
+          .map((t) => `"${t.replace(/"/g, '\\"')}"`)
+          .join(",");
+        orConditions.push(`team.in.(${teamCsv})`);
+      }
+      if (pageList.length > 0) {
+        orConditions.push(`page.in.(${pageList.join(",")})`);
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: related } = (await (supabase as any)
+        .from("stickers")
+        .select("id, team, group_code, page, type")
+        .or(orConditions.join(","))) as {
+        data: Array<{
+          id: string;
+          team: string | null;
+          group_code: string | null;
+          page: number | null;
+          type: string;
+        }> | null;
+      };
+
+      const relatedIds = (related ?? []).map((r) => r.id);
+      let myCurrentQty = new Map<string, number>();
+      if (relatedIds.length > 0) {
+        const { data: mineNow } = await supabase
+          .from("user_stickers")
+          .select("sticker_id, quantity")
+          .eq("user_id", user.id)
+          .in("sticker_id", relatedIds);
+        myCurrentQty = new Map(
+          (mineNow ?? []).map((r) => [r.sticker_id, r.quantity ?? 0]),
+        );
+      }
+
+      // Función helper: dado un grupo de stickers (de un team o page),
+      // ¿el trade me completaría ese grupo?
+      function isCompletable(stickersInGroup: typeof related): boolean {
+        if (!stickersInGroup || stickersInGroup.length === 0) return false;
+        for (const s of stickersInGroup) {
+          const haveIt = (myCurrentQty.get(s.id) ?? 0) >= 1;
+          const willGetIt = incomingIds.has(s.id);
+          if (!haveIt && !willGetIt) return false; // me faltaría incluso después
+        }
+        // ¿El trade aporta al menos 1 nuevo (no todo el grupo ya pegado)?
+        const aportaAlgo = stickersInGroup.some(
+          (s) => (myCurrentQty.get(s.id) ?? 0) === 0 && incomingIds.has(s.id),
+        );
+        return aportaAlgo;
+      }
+
+      // Verificar equipos
+      for (const team of teamList) {
+        const teamStickers = (related ?? []).filter((r) => r.team === team);
+        if (isCompletable(teamStickers)) {
+          myCompletions.push({ kind: "team", label: team });
+        }
+      }
+
+      // Verificar páginas (solo si NO es de un equipo ya completado para no duplicar)
+      for (const page of pageList) {
+        const pageStickers = (related ?? []).filter((r) => r.page === page);
+        // Si todos los stickers de esta página son de un team que ya marqué, skip
+        const teamOfPage = pageStickers[0]?.team;
+        if (
+          teamOfPage &&
+          pageStickers.every((s) => s.team === teamOfPage) &&
+          myCompletions.some((c) => c.kind === "team" && c.label === teamOfPage)
+        ) {
+          continue;
+        }
+        if (isCompletable(pageStickers)) {
+          myCompletions.push({ kind: "page", label: `Página ${page}` });
+        }
+      }
+    }
+  }
+
   // Counts AJUSTADOS — solo cuentan items disponibles
   const offeredAvailableCount = offered
     .filter((i) => i.isAvailable)
@@ -224,6 +336,8 @@ export default async function TradeDetailPage({
           availableCount={offeredAvailableCount}
           totalCount={offeredTotalCount}
           isLiveTrade={isLiveTrade}
+          // Si soy 'to_user', los items 'offer' los recibo yo → mostrar completions
+          myCompletions={!isFrom ? myCompletions : []}
         />
         <div className="hidden lg:flex items-center justify-center text-muted-foreground">
           <ArrowRight className="size-5" />
@@ -235,6 +349,8 @@ export default async function TradeDetailPage({
           availableCount={requestedAvailableCount}
           totalCount={requestedTotalCount}
           isLiveTrade={isLiveTrade}
+          // Si soy 'from_user', los items 'request' los recibo yo → mostrar completions
+          myCompletions={isFrom ? myCompletions : []}
         />
       </div>
 
@@ -323,6 +439,7 @@ function Column({
   availableCount,
   totalCount,
   isLiveTrade,
+  myCompletions = [],
 }: {
   title: string;
   accent: "pitch" | "gold";
@@ -338,6 +455,7 @@ function Column({
   availableCount: number;
   totalCount: number;
   isLiveTrade: boolean;
+  myCompletions?: Array<{ kind: "team" | "page"; label: string }>;
 }) {
   const bar = accent === "pitch" ? "bg-[var(--panini-blue)]" : "bg-[var(--gold)]";
   return (
@@ -363,6 +481,21 @@ function Column({
             </span>
           )}
         </div>
+
+        {myCompletions.length > 0 && (
+          <div className="mb-4 rounded-lg border border-[var(--gold)]/40 bg-[var(--gold)]/10 p-3 space-y-1.5">
+            <p className="text-[11px] uppercase tracking-wider font-semibold text-[color:var(--gold)] flex items-center gap-1">
+              <Sparkles className="size-3" /> Solo tú ves esto
+            </p>
+            {myCompletions.map((c, i) => (
+              <p key={i} className="text-sm font-medium leading-tight">
+                {c.kind === "team" ? "✨ " : "🎯 "}
+                Con esto completas {c.kind === "team" ? "el equipo" : "la"}{" "}
+                <span className="font-semibold">{c.label}</span>
+              </p>
+            ))}
+          </div>
+        )}
 
         {items.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground text-center border rounded-md">
