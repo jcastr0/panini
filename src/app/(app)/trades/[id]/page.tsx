@@ -8,6 +8,7 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { SITE_URL } from "@/lib/email/client";
 import { TradeActions } from "./_components/trade-actions";
 import { PendingPasteBanner } from "./_components/pending-paste-banner";
+import { ReadyCheckOverlay } from "./_components/ready-check-overlay";
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pendiente",
@@ -347,6 +348,16 @@ export default async function TradeDetailPage({
         </div>
       )}
 
+      {/* Helper visual mientras buscas físicamente los cromos a entregar. */}
+      {/* Solo activo en accepted — en pending aún se está negociando; en   */}
+      {/* completed ya se entregaron.                                       */}
+      {trade.status === "accepted" && (
+        <p className="text-xs text-muted-foreground -mb-2 flex items-center gap-1">
+          <span className="inline-block size-2 rounded-full bg-emerald-500" />
+          Marca los que tengas listos en tu lado mientras los buscas — es
+          ayuda visual, no se guarda.
+        </p>
+      )}
       <div className="grid lg:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
         <Column
           title={isFrom ? "Tú ofreces" : "Te ofrecen"}
@@ -357,6 +368,10 @@ export default async function TradeDetailPage({
           isLiveTrade={isLiveTrade}
           // Si soy 'to_user', los items 'offer' los recibo yo → mostrar completions
           myCompletions={!isFrom ? myCompletions : []}
+          // Si soy 'from_user', los items 'offer' los entrego yo → check sutil
+          readyCheckTradeId={
+            isFrom && trade.status === "accepted" ? trade.id : undefined
+          }
         />
         <div className="hidden lg:flex items-center justify-center text-muted-foreground">
           <ArrowRight className="size-5" />
@@ -370,6 +385,10 @@ export default async function TradeDetailPage({
           isLiveTrade={isLiveTrade}
           // Si soy 'from_user', los items 'request' los recibo yo → mostrar completions
           myCompletions={isFrom ? myCompletions : []}
+          // Si soy 'to_user', los items 'request' los entrego yo → check sutil
+          readyCheckTradeId={
+            !isFrom && trade.status === "accepted" ? trade.id : undefined
+          }
         />
       </div>
 
@@ -459,6 +478,7 @@ function Column({
   totalCount,
   isLiveTrade,
   myCompletions = [],
+  readyCheckTradeId,
 }: {
   title: string;
   accent: "pitch" | "gold";
@@ -475,6 +495,8 @@ function Column({
   totalCount: number;
   isLiveTrade: boolean;
   myCompletions?: Array<{ kind: "team" | "page"; label: string }>;
+  /** Si está definido, esta columna es "lo que YO entrego": activa el check sutil. */
+  readyCheckTradeId?: string;
 }) {
   const bar = accent === "pitch" ? "bg-[var(--panini-blue)]" : "bg-[var(--gold)]";
   return (
@@ -528,16 +550,11 @@ function Column({
                 it.stickers?.code === "00" ||
                 it.stickers?.code === "FWC3";
               const unavailable = isLiveTrade && !it.isAvailable;
-              return (
-                <li
-                  key={it.id}
-                  className={`relative rounded-lg overflow-hidden border bg-muted/30 group transition-opacity ${unavailable ? "opacity-40" : ""}`}
-                  title={
-                    unavailable
-                      ? `Ya no disponible (queda ${it.available} de ${it.quantity})`
-                      : undefined
-                  }
-                >
+              const titleText = unavailable
+                ? `Ya no disponible (queda ${it.available} de ${it.quantity})`
+                : undefined;
+              const inner = (
+                <>
                   <div
                     className="relative w-full"
                     style={{ aspectRatio: isHorizontal ? "4/3" : "3/4" }}
@@ -581,6 +598,28 @@ function Column({
                       {it.stickers?.team ?? it.stickers?.name}
                     </p>
                   </div>
+                </>
+              );
+              if (readyCheckTradeId && !unavailable && !it.pasted_at) {
+                return (
+                  <ReadyCheckOverlay
+                    key={it.id}
+                    tradeId={readyCheckTradeId}
+                    itemId={it.id}
+                    unavailable={unavailable}
+                    title={titleText}
+                  >
+                    {inner}
+                  </ReadyCheckOverlay>
+                );
+              }
+              return (
+                <li
+                  key={it.id}
+                  className={`relative rounded-lg overflow-hidden border bg-muted/30 group transition-opacity ${unavailable ? "opacity-40" : ""}`}
+                  title={titleText}
+                >
+                  {inner}
                 </li>
               );
             })}
