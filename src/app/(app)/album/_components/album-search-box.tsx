@@ -2,9 +2,11 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Sparkles, Check, Copy } from "lucide-react";
+import { Search, X, Sparkles, Check, Copy, Plus, Loader2 } from "lucide-react";
+import { setStickerQuantity } from "../actions";
 
 type Hit = {
+  id: string;
   code: string;
   team: string | null;
   group_code: string | null;
@@ -28,6 +30,28 @@ export function AlbumSearchBox() {
   const [loading, setLoading] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const [activeIdx, setActiveIdx] = React.useState(-1);
+  const [pendingId, setPendingId] = React.useState<string | null>(null);
+  const [bumpedId, setBumpedId] = React.useState<string | null>(null);
+
+  // +1 repetida directo desde la búsqueda. Solo cuando ya se tiene el cromo
+  // (qty>=1) — agregar uno que no tienes amerita ir a la página y verlo bien.
+  async function addDuplicate(hit: Hit) {
+    if (pendingId) return;
+    setPendingId(hit.id);
+    const newQty = hit.qty + 1;
+    const res = await setStickerQuantity(hit.id, newQty);
+    setPendingId(null);
+    if (!("error" in res) || !res.error) {
+      // Optimismo: refleja en UI inmediatamente sin re-fetch
+      setResults((prev) =>
+        prev.map((r) => (r.id === hit.id ? { ...r, qty: newQty } : r)),
+      );
+      setBumpedId(hit.id);
+      setTimeout(() => setBumpedId(null), 1200);
+      // Revalidate paths
+      router.refresh();
+    }
+  }
 
   // Debounce fetch
   React.useEffect(() => {
@@ -231,6 +255,35 @@ export function AlbumSearchBox() {
                       </span>
                       {(r.type === "shiny" || r.type === "legend") && (
                         <Sparkles className="size-3.5 text-[var(--gold)] shrink-0" />
+                      )}
+                      {r.qty >= 1 && (
+                        <button
+                          type="button"
+                          aria-label={`Sumar repetida de ${r.code}`}
+                          title="+1 repetida"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addDuplicate(r);
+                          }}
+                          disabled={pendingId === r.id}
+                          className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2 h-7 text-xs font-semibold border transition-all ${
+                            bumpedId === r.id
+                              ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[color:var(--gold)] scale-105"
+                              : "border-[var(--panini-blue)]/30 bg-[var(--panini-blue)]/5 text-[var(--panini-blue)] hover:bg-[var(--panini-blue)]/10"
+                          } disabled:opacity-60`}
+                        >
+                          {pendingId === r.id ? (
+                            <Loader2 className="size-3 animate-spin" />
+                          ) : bumpedId === r.id ? (
+                            <Check className="size-3" strokeWidth={3} />
+                          ) : (
+                            <Plus className="size-3" strokeWidth={3} />
+                          )}
+                          <span className="tabular">
+                            {bumpedId === r.id ? "sumada" : "repetida"}
+                          </span>
+                        </button>
                       )}
                     </li>
                   );

@@ -76,6 +76,7 @@ export async function GET(req: NextRequest) {
     .slice(0, 12);
 
   const results = ranked.map(({ row }) => ({
+    id: row.id,
     code: row.code ?? "",
     team: row.team,
     group_code: row.group_code,
