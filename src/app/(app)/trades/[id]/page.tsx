@@ -317,6 +317,7 @@ export default async function TradeDetailPage({
           {new Date(trade.created_at).toLocaleString("es-CO", {
             dateStyle: "medium",
             timeStyle: "short",
+            timeZone: "America/Bogota",
           })}
         </p>
       </header>

@@ -123,7 +123,7 @@ export default async function PublicProfilePage({
                 Última actividad{" "}
                 <time
                   dateTime={lastActivity.toISOString()}
-                  title={lastActivity.toLocaleString("es-CO")}
+                  title={lastActivity.toLocaleString("es-CO", { timeZone: "America/Bogota" })}
                   className="font-medium text-foreground/80"
                 >
                   {relativeAgo(lastActivity)}
