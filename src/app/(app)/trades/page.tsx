@@ -30,11 +30,25 @@ export default async function TradesPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: trades } = await supabase
+  const { data: trades } = (await supabase
     .from("trades")
-    .select("id, status, message, from_user, to_user, created_at")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .select(
+      "id, status, message, from_user, to_user, created_at, trade_type, price_cents",
+    )
     .or(`from_user.eq.${user.id},to_user.eq.${user.id}`)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })) as {
+    data: Array<{
+      id: string;
+      status: string;
+      message: string | null;
+      from_user: string;
+      to_user: string;
+      created_at: string;
+      trade_type: "swap" | "gift" | "sale" | null;
+      price_cents: number | null;
+    }> | null;
+  };
 
   const userIds = new Set<string>();
   (trades ?? []).forEach((t) => {
@@ -95,6 +109,8 @@ export default async function TradesPage() {
                   message={t.message}
                   date={t.created_at}
                   direction="incoming"
+                  tradeType={t.trade_type ?? "swap"}
+                  priceCents={t.price_cents}
                 />
               );
             })}
@@ -125,6 +141,8 @@ export default async function TradesPage() {
                   message={t.message}
                   date={t.created_at}
                   direction="outgoing"
+                  tradeType={t.trade_type ?? "swap"}
+                  priceCents={t.price_cents}
                 />
               );
             })}
@@ -143,6 +161,8 @@ function TradeRow({
   message,
   date,
   direction,
+  tradeType,
+  priceCents,
 }: {
   href: string;
   otherName: string;
@@ -151,6 +171,8 @@ function TradeRow({
   message: string | null;
   date: string;
   direction: "incoming" | "outgoing";
+  tradeType: "swap" | "gift" | "sale";
+  priceCents: number | null;
 }) {
   return (
     <Link
@@ -161,12 +183,22 @@ function TradeRow({
         {otherName.slice(0, 2).toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium truncate">
             {direction === "incoming" ? "De" : "Para"} {otherName}
           </span>
           {city && (
             <span className="text-xs text-muted-foreground">· {city}</span>
+          )}
+          {tradeType === "gift" && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--gold)]/15 text-[color:var(--gold)]">
+              🎁 Obsequio
+            </span>
+          )}
+          {tradeType === "sale" && priceCents != null && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+              $ {(priceCents / 100).toLocaleString("es-CO")} COP
+            </span>
           )}
         </div>
         {message && (

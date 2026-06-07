@@ -45,7 +45,7 @@ export default async function TradeDetailPage({
   const { data: trade } = (await (supabase as any)
     .from("trades")
     .select(
-      "id, from_user, to_user, status, message, created_at, updated_at, auto_pasted",
+      "id, from_user, to_user, status, message, created_at, updated_at, auto_pasted, trade_type, price_cents",
     )
     .eq("id", id)
     .maybeSingle()) as {
@@ -58,6 +58,8 @@ export default async function TradeDetailPage({
       created_at: string;
       updated_at: string;
       auto_pasted: boolean | null;
+      trade_type: "swap" | "gift" | "sale" | null;
+      price_cents: number | null;
     } | null;
   };
   if (!trade) notFound();
@@ -297,17 +299,36 @@ export default async function TradeDetailPage({
     );
   }
 
+  const tradeType = trade.trade_type ?? "swap";
+  const priceCop = trade.price_cents ? trade.price_cents / 100 : null;
+  const typeMeta = {
+    swap: { label: "Intercambio", eyebrow: "Intercambio", verb: "Propuesta" },
+    gift: { label: "Obsequio", eyebrow: "Obsequio", verb: "Regalo" },
+    sale: { label: "Venta", eyebrow: "Venta", verb: "Venta" },
+  } as const;
+  const meta = typeMeta[tradeType];
+
   return (
     <div className="space-y-8">
       <header className="space-y-4">
-        <div className="flex items-center gap-3">
-          <span className="eyebrow">Intercambio</span>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="eyebrow">{meta.eyebrow}</span>
           <Badge variant="outline" className="font-mono text-[10px]">
             {STATUS_LABEL[trade.status]}
           </Badge>
+          {tradeType === "gift" && (
+            <Badge className="font-mono text-[10px] bg-[var(--gold)]/20 text-[color:var(--gold)] border-[var(--gold)]/40">
+              🎁 Sin esperar nada a cambio
+            </Badge>
+          )}
+          {tradeType === "sale" && priceCop != null && (
+            <Badge className="font-mono text-[10px] bg-emerald-100 text-emerald-700 border-emerald-300">
+              $ {priceCop.toLocaleString("es-CO")} COP
+            </Badge>
+          )}
         </div>
         <h1 className="font-display text-4xl font-bold tracking-tight">
-          {isFrom ? "Propuesta a " : "Propuesta de "}
+          {meta.verb} {isFrom ? "a " : "de "}
           <span className="text-[var(--panini-blue)]">
             {other?.display_name || `@${other?.username ?? "usuario"}`}
           </span>
@@ -359,9 +380,19 @@ export default async function TradeDetailPage({
           ayuda visual, no se guarda.
         </p>
       )}
-      <div className="grid lg:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
+      <div
+        className={`grid gap-4 items-stretch ${
+          tradeType === "swap" ? "lg:grid-cols-[1fr_auto_1fr]" : "lg:grid-cols-1"
+        }`}
+      >
         <Column
-          title={isFrom ? "Tú ofreces" : "Te ofrecen"}
+          title={
+            tradeType === "swap"
+              ? isFrom ? "Tú ofreces" : "Te ofrecen"
+              : tradeType === "gift"
+                ? isFrom ? "Tú regalas" : "Te regalan"
+                : isFrom ? "Tú vendes" : "Te venden"
+          }
           accent="gold"
           items={offered}
           availableCount={offeredAvailableCount}
@@ -374,10 +405,12 @@ export default async function TradeDetailPage({
             isFrom && trade.status === "accepted" ? trade.id : undefined
           }
         />
-        <div className="hidden lg:flex items-center justify-center text-muted-foreground">
-          <ArrowRight className="size-5" />
-        </div>
-        <Column
+        {tradeType === "swap" && (
+          <>
+            <div className="hidden lg:flex items-center justify-center text-muted-foreground">
+              <ArrowRight className="size-5" />
+            </div>
+            <Column
           title={isFrom ? "Tú pides" : "Te piden"}
           accent="pitch"
           items={requested}
@@ -391,6 +424,8 @@ export default async function TradeDetailPage({
             !isFrom && trade.status === "accepted" ? trade.id : undefined
           }
         />
+          </>
+        )}
       </div>
 
       {/* Banner de pendientes (solo si yo soy receiver y hay items por pegar) */}

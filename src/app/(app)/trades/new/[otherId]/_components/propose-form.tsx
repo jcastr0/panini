@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Check, Minus, Plus, Sparkles } from "lucide-react";
+import { Check, Minus, Plus, Sparkles, Repeat, Gift, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { stickerImagePath } from "@/lib/sticker-image";
 import { createTrade } from "../../../actions";
+
+type TradeType = "swap" | "gift" | "sale";
 
 type Sticker = {
   id: string;
@@ -31,11 +33,16 @@ export function ProposeForm({
   canOffer: Sticker[];
   canRequest: Sticker[];
 }) {
+  const [tradeType, setTradeType] = useState<TradeType>("swap");
   const [offers, setOffers] = useState<SelectMap>({});
   const [requests, setRequests] = useState<SelectMap>({});
+  const [priceCop, setPriceCop] = useState<string>("");
   const [message, setMessage] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const needsRequest = tradeType === "swap";
+  const needsPrice = tradeType === "sale";
 
   const offerCount = useMemo(
     () => Object.values(offers).reduce((a, b) => a + b, 0),
@@ -62,9 +69,26 @@ export function ProposeForm({
 
   function submit() {
     setError(null);
-    if (offerCount === 0 || requestCount === 0) {
-      setError("Selecciona al menos un cromo a ofrecer y otro a pedir.");
+    if (offerCount === 0) {
+      setError(
+        needsRequest
+          ? "Selecciona al menos un cromo a ofrecer y otro a pedir."
+          : "Selecciona al menos un cromo a entregar.",
+      );
       return;
+    }
+    if (needsRequest && requestCount === 0) {
+      setError("Selecciona al menos un cromo a pedir.");
+      return;
+    }
+    let priceNumber: number | null = null;
+    if (needsPrice) {
+      const parsed = Number(priceCop.replace(/[^\d]/g, ""));
+      if (!parsed || parsed <= 0) {
+        setError("Define un precio en COP mayor a 0.");
+        return;
+      }
+      priceNumber = parsed;
     }
     const items = [
       ...Object.entries(offers).map(([sticker_id, q]) => ({
@@ -72,17 +96,21 @@ export function ProposeForm({
         direction: "offer" as const,
         quantity: q,
       })),
-      ...Object.entries(requests).map(([sticker_id, q]) => ({
-        sticker_id,
-        direction: "request" as const,
-        quantity: q,
-      })),
+      ...(needsRequest
+        ? Object.entries(requests).map(([sticker_id, q]) => ({
+            sticker_id,
+            direction: "request" as const,
+            quantity: q,
+          }))
+        : []),
     ];
     startTransition(async () => {
       const res = await createTrade({
         to_user: toUser,
         message: message.trim() || null,
         items,
+        trade_type: tradeType,
+        price_cop: priceNumber,
       });
       if (res && "error" in res && res.error) {
         setError(res.error);
@@ -106,10 +134,59 @@ export function ProposeForm({
 
   return (
     <div className="space-y-8">
-      <div className="grid lg:grid-cols-2 gap-6">
+      {/* Tipo de intercambio */}
+      <div className="border rounded-xl bg-card p-3">
+        <div className="grid grid-cols-3 gap-1">
+          <TypeButton
+            active={tradeType === "swap"}
+            onClick={() => setTradeType("swap")}
+            icon={<Repeat className="size-4" />}
+            label="Intercambio"
+            hint="Cromos por cromos"
+          />
+          <TypeButton
+            active={tradeType === "gift"}
+            onClick={() => setTradeType("gift")}
+            icon={<Gift className="size-4" />}
+            label="Obsequio"
+            hint="Sin pedir nada"
+          />
+          <TypeButton
+            active={tradeType === "sale"}
+            onClick={() => setTradeType("sale")}
+            icon={<DollarSign className="size-4" />}
+            label="Venta"
+            hint="Por dinero"
+          />
+        </div>
+        {tradeType === "gift" && (
+          <p className="text-xs text-muted-foreground mt-2 pl-1">
+            Le envías cromos sin esperar nada a cambio. La otra persona
+            decide si acepta el regalo.
+          </p>
+        )}
+        {tradeType === "sale" && (
+          <p className="text-xs text-muted-foreground mt-2 pl-1">
+            La otra persona acepta y coordinan el pago por fuera (WhatsApp,
+            transferencia, etc). La app solo registra el precio acordado.
+          </p>
+        )}
+      </div>
+
+      <div className={cn("grid gap-6", needsRequest ? "lg:grid-cols-2" : "lg:grid-cols-1")}>
         <Panel
-          title="Tú ofreces"
-          subtitle="Tus repetidos que a esta persona le faltan"
+          title={
+            tradeType === "swap"
+              ? "Tú ofreces"
+              : tradeType === "gift"
+                ? "Tú regalas"
+                : "Tú vendes"
+          }
+          subtitle={
+            tradeType === "swap"
+              ? "Tus repetidos que a esta persona le faltan"
+              : "Tus repetidos para entregar a esta persona"
+          }
           accent="gold"
           count={offerCount}
         >
@@ -120,22 +197,56 @@ export function ProposeForm({
             onAdjust={(id, max, d) => adjust(offers, setOffers, id, max, d)}
           />
         </Panel>
-        <Panel
-          title="Tú pides"
-          subtitle="Sus repetidos que a ti te faltan"
-          accent="pitch"
-          count={requestCount}
-        >
-          <StickerPicker
-            stickers={canRequest}
-            selected={requests}
-            maxFor={(s) => Math.max(0, s.theirs - 1)}
-            onAdjust={(id, max, d) =>
-              adjust(requests, setRequests, id, max, d)
-            }
-          />
-        </Panel>
+        {needsRequest && (
+          <Panel
+            title="Tú pides"
+            subtitle="Sus repetidos que a ti te faltan"
+            accent="pitch"
+            count={requestCount}
+          >
+            <StickerPicker
+              stickers={canRequest}
+              selected={requests}
+              maxFor={(s) => Math.max(0, s.theirs - 1)}
+              onAdjust={(id, max, d) =>
+                adjust(requests, setRequests, id, max, d)
+              }
+            />
+          </Panel>
+        )}
       </div>
+
+      {needsPrice && (
+        <div className="border rounded-xl bg-card p-5 space-y-2">
+          <label htmlFor="price" className="eyebrow">
+            Precio acordado (COP)
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-display text-muted-foreground">$</span>
+            <input
+              id="price"
+              inputMode="numeric"
+              value={priceCop}
+              onChange={(e) => {
+                // Solo dígitos; format con miles
+                const digits = e.target.value.replace(/[^\d]/g, "");
+                if (!digits) {
+                  setPriceCop("");
+                  return;
+                }
+                const n = Math.min(10_000_000, Number(digits));
+                setPriceCop(n.toLocaleString("es-CO"));
+              }}
+              placeholder="0"
+              className="flex-1 text-2xl font-display tabular bg-transparent focus:outline-none border-b border-border focus:border-foreground"
+            />
+            <span className="text-sm text-muted-foreground">COP</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            El pago se coordina por fuera de la app.
+          </p>
+        </div>
+      )}
 
       <div className="border rounded-xl bg-card p-5 space-y-3">
         <label htmlFor="msg" className="eyebrow">
@@ -163,20 +274,75 @@ export function ProposeForm({
 
       <div className="flex items-center justify-end gap-3 sticky bottom-4">
         <div className="hidden sm:flex items-center gap-4 mr-auto">
-          <Stat label="Ofreces" value={offerCount} accent="gold" />
-          <Stat label="Pides" value={requestCount} accent="pitch" />
+          <Stat
+            label={tradeType === "swap" ? "Ofreces" : tradeType === "gift" ? "Regalas" : "Vendes"}
+            value={offerCount}
+            accent="gold"
+          />
+          {needsRequest && <Stat label="Pides" value={requestCount} accent="pitch" />}
         </div>
         <Button
           onClick={submit}
-          disabled={pending || offerCount === 0 || requestCount === 0}
+          disabled={
+            pending ||
+            offerCount === 0 ||
+            (needsRequest && requestCount === 0) ||
+            (needsPrice && !priceCop)
+          }
           size="lg"
           className="bg-foreground text-background hover:bg-foreground/90 rounded-full px-6"
         >
-          {pending ? "Enviando…" : "Enviar propuesta"}{" "}
+          {pending
+            ? "Enviando…"
+            : tradeType === "swap"
+              ? "Enviar propuesta"
+              : tradeType === "gift"
+                ? "Enviar obsequio"
+                : "Proponer venta"}{" "}
           <Check className="ml-1 size-4" />
         </Button>
       </div>
     </div>
+  );
+}
+
+function TypeButton({
+  active,
+  onClick,
+  icon,
+  label,
+  hint,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "flex flex-col items-center gap-1 py-2 px-1 rounded-lg border-2 transition-all text-center",
+        active
+          ? "border-foreground bg-foreground/5"
+          : "border-transparent hover:bg-muted/60 text-muted-foreground",
+      )}
+    >
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 font-display font-semibold text-sm",
+          active && "text-foreground",
+        )}
+      >
+        {icon} {label}
+      </span>
+      <span className="text-[10px] uppercase tracking-wider opacity-80">
+        {hint}
+      </span>
+    </button>
   );
 }
 

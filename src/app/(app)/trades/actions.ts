@@ -29,6 +29,9 @@ const createTradeSchema = z.object({
   to_user: z.string().uuid(),
   message: z.string().max(500).optional().nullable(),
   items: z.array(tradeItemSchema).min(1, "Agrega al menos un cromo"),
+  trade_type: z.enum(["swap", "gift", "sale"]).default("swap"),
+  // En COP, en pesos enteros (no centavos), max 10M.
+  price_cop: z.coerce.number().int().min(0).max(10_000_000).optional().nullable(),
 });
 
 function revalidateTrade(tradeId: string) {
@@ -42,12 +45,33 @@ export async function createTrade(input: z.infer<typeof createTradeSchema>) {
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
   }
-  const { to_user, message, items } = parsed.data;
+  const { to_user, message, items, trade_type, price_cop } = parsed.data;
   if (!items.some((i) => i.direction === "offer")) {
     return { error: "Debes ofrecer al menos un cromo" };
   }
-  if (!items.some((i) => i.direction === "request")) {
-    return { error: "Debes pedir al menos un cromo" };
+
+  if (trade_type === "swap") {
+    if (!items.some((i) => i.direction === "request")) {
+      return { error: "Debes pedir al menos un cromo" };
+    }
+    if (price_cop != null) {
+      return { error: "El intercambio normal no lleva precio" };
+    }
+  } else {
+    // gift / sale: no admiten items 'request'
+    if (items.some((i) => i.direction === "request")) {
+      return { error: "Obsequio y venta no admiten pedir cromos a cambio" };
+    }
+    if (trade_type === "sale") {
+      if (!price_cop || price_cop <= 0) {
+        return { error: "Define un precio en COP mayor a 0" };
+      }
+    } else {
+      // gift: sin precio
+      if (price_cop != null) {
+        return { error: "El obsequio no lleva precio" };
+      }
+    }
   }
 
   const supabase = await createClient();
@@ -56,14 +80,22 @@ export async function createTrade(input: z.infer<typeof createTradeSchema>) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "No autenticado" };
 
+  // price_cents: en sale, multiplicamos COP por 100 (consistencia con la
+  // convención cents aunque COP no tenga subdivisión práctica).
+  const priceCents =
+    trade_type === "sale" && price_cop ? Math.round(price_cop * 100) : null;
+
   const { data: trade, error } = await supabase
     .from("trades")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .insert({
       from_user: user.id,
       to_user,
       message: message ?? null,
       status: "pending",
-    })
+      trade_type,
+      price_cents: priceCents,
+    } as any)
     .select("id")
     .single();
   if (error || !trade) return { error: error?.message ?? "No se pudo crear" };
