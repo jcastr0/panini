@@ -104,9 +104,9 @@ export default async function NewTradePage() {
         </h1>
         <p className="text-muted-foreground max-w-2xl">
           Coleccionistas con repetidos de cromos que te faltan, y a quienes tú
-          puedes ofrecer. El{" "}
-          <span className="font-medium text-foreground">score</span> mide el
-          potencial total del intercambio.
+          puedes ofrecer. Se ordenan por{" "}
+          <span className="font-medium text-foreground">cuánto te ofrecen</span>
+          {" "}— prioridad a completar tu álbum.
         </p>
       </header>
 
