@@ -506,9 +506,8 @@ function Column({
             {items.map((it) => {
               const img = stickerImagePath(it.stickers?.code);
               const isHorizontal =
-                it.stickers?.code === "0" ||
                 it.stickers?.code === "00" ||
-                it.stickers?.code === "3";
+                it.stickers?.code === "FWC3";
               const unavailable = isLiveTrade && !it.isAvailable;
               return (
                 <li
