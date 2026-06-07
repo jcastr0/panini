@@ -202,6 +202,16 @@ export default async function GroupPage({
         total={groupTotal}
         context={`${currentTeam.flag} ${currentTeam.name} · ${teamOwned}/${teamTotal} · ${teamPercent}%`}
         ownerProps={ownerProps}
+        nextHref={
+          idx < GROUP_CODES.length - 1
+            ? `${sectionHref(GROUP_CODES[idx + 1])}?p=1`
+            : sectionHref("historia")
+        }
+        nextLabel={
+          idx < GROUP_CODES.length - 1
+            ? `Grupo ${GROUP_CODES[idx + 1]}`
+            : "Historia"
+        }
       />
 
       {/* Selector de equipos — cada tab usa el color del país, el activo se resalta */}

@@ -166,6 +166,16 @@ export default async function PublicGroupPage({
         ownerProps={ownerProps}
         backHref={`/u/${username}`}
         backLabel={`Perfil de ${ownerDisplay}`}
+        nextHref={
+          idx < GROUP_CODES.length - 1
+            ? `/u/${username}/grupo/${GROUP_CODES[idx + 1].toLowerCase()}?p=1`
+            : `/u/${username}/historia`
+        }
+        nextLabel={
+          idx < GROUP_CODES.length - 1
+            ? `Grupo ${GROUP_CODES[idx + 1]}`
+            : "Historia"
+        }
       />
 
       <nav

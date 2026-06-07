@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { CollectorCardLightbox } from "./collector-card-lightbox";
 
 export function SectionHero({
@@ -15,6 +15,8 @@ export function SectionHero({
   ownerProps,
   backHref = "/album",
   backLabel = "Mi álbum",
+  nextHref,
+  nextLabel,
 }: {
   accent: string;
   tint: string;
@@ -37,6 +39,9 @@ export function SectionHero({
   /** Link de regreso (default: /album). Personalízalo en vistas /u/:username/... */
   backHref?: string;
   backLabel?: string;
+  /** Opcional: salto rápido al siguiente bloque (ej. siguiente grupo). */
+  nextHref?: string;
+  nextLabel?: string;
 }) {
   const percent = total > 0 ? Math.round((owned / total) * 100) : 0;
   const cardSrc = ownerProps.collectorCardBase64
@@ -54,13 +59,22 @@ export function SectionHero({
       style={{ backgroundColor: tint }}
     >
       <div className="max-w-6xl mx-auto space-y-6">
-        <div>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <Link
             href={backHref}
             className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur border px-4 h-10 text-sm font-medium hover:bg-card transition-colors"
           >
             <ArrowLeft className="size-4" /> {backLabel}
           </Link>
+          {nextHref && nextLabel && (
+            <Link
+              href={nextHref}
+              className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur border px-4 h-10 text-sm font-medium hover:bg-card transition-colors"
+              style={{ borderColor: `${accent}55` }}
+            >
+              {nextLabel} <ArrowRight className="size-4" />
+            </Link>
+          )}
         </div>
 
         {/* Dos columnas: izquierda = grupo (dominante), derecha = lámina del dueño */}
