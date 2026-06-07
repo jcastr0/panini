@@ -69,7 +69,7 @@ export default async function TradeDetailPage({
     (supabase as any)
       .from("trade_items")
       .select(
-        "id, direction, quantity, sticker_id, pasted_at, stickers(code, number, name, team, type)",
+        "id, direction, quantity, sticker_id, pasted_at, stickers(code, number, name, team, type, page, group_code)",
       )
       .eq("trade_id", id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,8 +121,27 @@ export default async function TradeDetailPage({
     return { ...it, available: have, isAvailable: have >= it.quantity };
   });
 
+  // Cuando el trade ya se aceptó (o más allá), ordenar como en el álbum:
+  // page asc → team asc → number asc. Facilita ubicarlos físicamente al
+  // intercambiar. Antes de aceptar conservamos el orden natural (creación).
+  const sortByAlbum = (a: EnrichedItem, b: EnrichedItem) => {
+    const pa = a.stickers?.page ?? 9999;
+    const pb = b.stickers?.page ?? 9999;
+    if (pa !== pb) return pa - pb;
+    const ta = a.stickers?.team ?? "";
+    const tb = b.stickers?.team ?? "";
+    if (ta !== tb) return ta.localeCompare(tb);
+    return (a.stickers?.number ?? 0) - (b.stickers?.number ?? 0);
+  };
+  const shouldSortByAlbum =
+    trade.status === "accepted" || trade.status === "completed";
+
   const offered = enriched.filter((i) => i.direction === "offer");
   const requested = enriched.filter((i) => i.direction === "request");
+  if (shouldSortByAlbum) {
+    offered.sort(sortByAlbum);
+    requested.sort(sortByAlbum);
+  }
 
   // ─────────────────────────────────────────────────────────────────────
   // Análisis PRIVADO: ¿con lo que YO recibo del trade completo equipo/página?
