@@ -124,9 +124,9 @@ export default async function TradeDetailPage({
     return { ...it, available: have, isAvailable: have >= it.quantity };
   });
 
-  // Cuando el trade ya se aceptó (o más allá), ordenar como en el álbum:
-  // page asc → team asc → number asc. Facilita ubicarlos físicamente al
-  // intercambiar. Antes de aceptar conservamos el orden natural (creación).
+  // Ordenar siempre como en el álbum: page asc → team asc → number asc.
+  // Facilita ubicarlos físicamente desde que el trade se propone, no solo
+  // cuando se acepta.
   const sortByAlbum = (a: EnrichedItem, b: EnrichedItem) => {
     const pa = a.stickers?.page ?? 9999;
     const pb = b.stickers?.page ?? 9999;
@@ -136,15 +136,9 @@ export default async function TradeDetailPage({
     if (ta !== tb) return ta.localeCompare(tb);
     return (a.stickers?.number ?? 0) - (b.stickers?.number ?? 0);
   };
-  const shouldSortByAlbum =
-    trade.status === "accepted" || trade.status === "completed";
 
-  const offered = enriched.filter((i) => i.direction === "offer");
-  const requested = enriched.filter((i) => i.direction === "request");
-  if (shouldSortByAlbum) {
-    offered.sort(sortByAlbum);
-    requested.sort(sortByAlbum);
-  }
+  const offered = enriched.filter((i) => i.direction === "offer").sort(sortByAlbum);
+  const requested = enriched.filter((i) => i.direction === "request").sort(sortByAlbum);
 
   // ─────────────────────────────────────────────────────────────────────
   // Análisis PRIVADO: ¿con lo que YO recibo del trade completo equipo/página?
