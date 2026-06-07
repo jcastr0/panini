@@ -195,6 +195,8 @@ export function ProposeForm({
             selected={offers}
             maxFor={(s) => Math.max(0, s.mine - 1)}
             onAdjust={(id, max, d) => adjust(offers, setOffers, id, max, d)}
+            ownerQty={(s) => s.mine}
+            ownerLabel="tienes"
           />
         </Panel>
         {needsRequest && (
@@ -211,6 +213,8 @@ export function ProposeForm({
               onAdjust={(id, max, d) =>
                 adjust(requests, setRequests, id, max, d)
               }
+              ownerQty={(s) => s.theirs}
+              ownerLabel="tiene"
             />
           </Panel>
         )}
@@ -394,11 +398,17 @@ function StickerPicker({
   selected,
   maxFor,
   onAdjust,
+  ownerQty,
+  ownerLabel,
 }: {
   stickers: Sticker[];
   selected: SelectMap;
   maxFor: (s: Sticker) => number;
   onAdjust: (id: string, max: number, delta: number) => void;
+  /** Cantidad TOTAL que tiene el dueño del lado (yo para offer, el otro para request). */
+  ownerQty: (s: Sticker) => number;
+  /** "tienes" o "tiene" — para personalizar el contexto. */
+  ownerLabel: string;
 }) {
   if (stickers.length === 0) {
     return (
@@ -412,6 +422,7 @@ function StickerPicker({
       {stickers.map((s) => {
         const qty = selected[s.id] ?? 0;
         const max = maxFor(s);
+        const owned = ownerQty(s);
         const shiny = s.type === "shiny" || s.type === "legend";
         const img = stickerImagePath(s.code);
         return (
@@ -438,11 +449,22 @@ function StickerPicker({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate flex items-center gap-1">
-                {s.team ?? s.name}
+              <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                <span className="truncate">{s.team ?? s.name}</span>
                 {shiny && (
                   <Sparkles className="size-3 text-[var(--gold)] shrink-0" />
                 )}
+                <span
+                  className={cn(
+                    "shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded tabular",
+                    owned >= 2
+                      ? "bg-[var(--gold)]/15 text-[color:var(--gold)] font-semibold"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                  title={`${ownerLabel} ${owned}`}
+                >
+                  {ownerLabel} ×{owned}
+                </span>
               </p>
               <p className="text-xs text-muted-foreground truncate font-mono">
                 {s.code ?? `#${String(s.number).padStart(3, "0")}`}
