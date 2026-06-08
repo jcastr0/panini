@@ -287,52 +287,61 @@
 }
 
 /* ── Print: lista de faltantes ─────────────────────────────────────────── */
-/* Cuando body.printing-missing está activo, escondemos toda la app excepto
-   el subtree con .print-target (el Popup del dialog). Usamos visibility en
-   vez de display:none para que la layout interna del target no colapse. */
+/* El dialog vive dentro de un portal con position:fixed — eso hace que el
+   browser repita el contenido en cada página al imprimir. Por eso clonamos
+   el popup a un container hijo directo del body con clase .print-clone
+   antes de window.print() y lo borramos después. Aquí solo dejamos el clon
+   visible; todo lo demás del body se oculta. */
 @media print {
-  body.printing-missing * {
-    visibility: hidden !important;
+  body.printing-missing > *:not(.print-clone) {
+    display: none !important;
   }
-  body.printing-missing .print-target,
-  body.printing-missing .print-target * {
-    visibility: visible !important;
+  body.printing-missing,
+  body.printing-missing .print-clone {
+    background: white !important;
   }
-  body.printing-missing .print-target {
-    position: fixed !important;
-    inset: 0 !important;
+  .print-clone {
+    /* Anular cualquier fixed/transform que pudiera quedar del clone */
+    position: static !important;
+    transform: none !important;
+    inset: auto !important;
     width: 100% !important;
     max-width: none !important;
     max-height: none !important;
-    transform: none !important;
-    background: white !important;
     overflow: visible !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
+    display: block !important;
   }
-  body.printing-missing {
-    background: white !important;
-  }
-  /* Grid denso auto-fit: el browser mete tantas columnas como quepan
-     manteniendo ancho mínimo legible. Gap mínimo, sin border-radius. */
-  .print-target .print-grid {
+  /* Grid denso auto-fit: el browser mete tantas columnas como quepan. */
+  .print-clone .print-grid {
     display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)) !important;
     gap: 4px !important;
   }
-  .print-target .print-grid > li {
+  .print-clone .print-grid > li {
+    border: 1px solid rgba(0, 0, 0, 0.25) !important;
     border-radius: 3px !important;
+    background: white !important;
     page-break-inside: avoid;
     break-inside: avoid;
+    opacity: 1 !important;
   }
-  .print-target .print-grid > li > div:last-child {
+  .print-clone .print-grid > li > div:last-child {
     padding: 1px 2px !important;
+    text-align: center;
   }
-  .print-target .print-grid p {
+  .print-clone .print-grid p {
     font-size: 7.5px !important;
     line-height: 1.15 !important;
     margin: 0 !important;
+    color: black !important;
+  }
+  .print-clone .print-grid img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
   }
   @page {
     margin: 8mm 6mm;

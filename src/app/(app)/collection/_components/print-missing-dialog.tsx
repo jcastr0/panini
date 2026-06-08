@@ -101,19 +101,45 @@ export function PrintMissingDialog({
     missing.filter((s) => s.type === "legend").every((s) => omitted.has(s.id));
 
   const visible = missing.filter((s) => !omitted.has(s.id));
+  const popupRef = React.useRef<HTMLDivElement | null>(null);
 
   function handlePrint() {
+    if (!popupRef.current) return;
+    // Clonamos el popup a un container hijo directo del body. El popup vive
+    // dentro de un portal con position:fixed — eso hace que el browser
+    // repita el contenido en cada página al imprimir. Movido a flujo normal,
+    // el page-break se comporta correctamente.
+    const original = popupRef.current;
+    const clone = original.cloneNode(true) as HTMLElement;
+
+    // Quitar las clases que forzaban fixed/centrado y los botones interactivos.
+    clone.className = "print-clone";
+    // Remover el header con botones (no se imprime, pero por las dudas)
+    clone.querySelectorAll(".print\\:hidden").forEach((el) => el.remove());
+    // Remover los li omitidos del clon (estaban con print:hidden pero ahora
+    // recreamos la regla por safety)
+    clone.querySelectorAll<HTMLLIElement>("li[data-omitted='1']").forEach((el) =>
+      el.remove(),
+    );
+
+    document.body.appendChild(clone);
     document.body.classList.add("printing-missing");
-    window.print();
-    // Limpiar tras un tick — algunos navegadores disparan onafterprint async.
-    setTimeout(() => document.body.classList.remove("printing-missing"), 500);
+
+    const cleanup = () => {
+      if (document.body.contains(clone)) document.body.removeChild(clone);
+      document.body.classList.remove("printing-missing");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    // Pequeño tick para que el clone se pinte antes de print.
+    setTimeout(() => window.print(), 80);
   }
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 print:hidden" />
-        <Dialog.Popup className="print-target fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95vw] max-w-5xl max-h-[92vh] rounded-xl border bg-card shadow-2xl flex flex-col">
+        <Dialog.Popup ref={popupRef} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95vw] max-w-5xl max-h-[92vh] rounded-xl border bg-card shadow-2xl flex flex-col">
           {/* Header (oculto en print) */}
           <header className="flex items-center justify-between gap-3 px-6 py-4 border-b print:hidden">
             <div>
@@ -221,10 +247,11 @@ function PrintItem({
 
   return (
     <li
+      data-omitted={omitted ? "1" : undefined}
       className={
         omitted
-          ? "relative border-2 border-dashed rounded-lg overflow-hidden bg-muted/40 opacity-40 print:hidden"
-          : "relative border rounded-lg overflow-hidden bg-card print:border-black/30 print:rounded-md print:break-inside-avoid"
+          ? "relative border-2 border-dashed rounded-lg overflow-hidden bg-muted/40 opacity-40"
+          : "relative border rounded-lg overflow-hidden bg-card"
       }
     >
       {/* Toggle omitir (solo pantalla) */}
