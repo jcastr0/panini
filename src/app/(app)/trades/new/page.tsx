@@ -40,12 +40,18 @@ export default async function NewTradePage() {
 
   // Stickers catalog para code lookup (1 query, paginated)
   const stickerCatalog = matchIds.length
-    ? await paginate<{ id: string; code: string | null; name: string; team: string | null }>(
-        (from, to) =>
-          supabase
-            .from("stickers")
-            .select("id, code, name, team")
-            .range(from, to),
+    ? await paginate<{
+        id: string;
+        code: string | null;
+        name: string;
+        team: string | null;
+        page: number | null;
+        number: number | null;
+      }>((from, to) =>
+        supabase
+          .from("stickers")
+          .select("id, code, name, team, page, number")
+          .range(from, to),
       )
     : [];
 
@@ -71,6 +77,26 @@ export default async function NewTradePage() {
     .filter(([, q]) => q >= 2)
     .map(([id]) => id);
 
+  // Ordenar como en el álbum: page asc → team asc → number asc.
+  // Igual que en /trades/[id] — facilita ubicar los cromos físicamente.
+  type CatalogSticker = {
+    id: string;
+    code: string | null;
+    name: string;
+    team: string | null;
+    page: number | null;
+    number: number | null;
+  };
+  const sortByAlbum = (a: CatalogSticker, b: CatalogSticker) => {
+    const pa = a.page ?? 9999;
+    const pb = b.page ?? 9999;
+    if (pa !== pb) return pa - pb;
+    const ta = a.team ?? "";
+    const tb = b.team ?? "";
+    if (ta !== tb) return ta.localeCompare(tb);
+    return (a.number ?? 0) - (b.number ?? 0);
+  };
+
   function previewsFor(otherId: string) {
     // they_offer: sus repetidos que a mí me faltan (todos)
     const theyOfferIds = (theirDupesByUser.get(otherId) ?? []).filter(
@@ -79,20 +105,9 @@ export default async function NewTradePage() {
     // i_offer: mis repetidos que a ellos les faltan (todos)
     const theirOwned = theirOwnedByUser.get(otherId) ?? new Set();
     const iOfferIds = myDupes.filter((sid) => !theirOwned.has(sid));
-    return {
-      theyOffer: theyOfferIds.map((id) => stickerById.get(id)).filter(Boolean) as Array<{
-        id: string;
-        code: string | null;
-        name: string;
-        team: string | null;
-      }>,
-      iOffer: iOfferIds.map((id) => stickerById.get(id)).filter(Boolean) as Array<{
-        id: string;
-        code: string | null;
-        name: string;
-        team: string | null;
-      }>,
-    };
+    const theyOffer = (theyOfferIds.map((id) => stickerById.get(id)).filter(Boolean) as CatalogSticker[]).sort(sortByAlbum);
+    const iOffer = (iOfferIds.map((id) => stickerById.get(id)).filter(Boolean) as CatalogSticker[]).sort(sortByAlbum);
+    return { theyOffer, iOffer };
   }
 
   return (
