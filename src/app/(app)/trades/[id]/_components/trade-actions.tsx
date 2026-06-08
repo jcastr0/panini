@@ -284,9 +284,6 @@ export function TradeActions({
                       ? "Los cromos que recibo se suman a mi álbum de inmediato."
                       : "Recibo los cromos pero los pego yo después, uno por uno (ritual)."}
                   </p>
-                  <p className="text-[10px] text-muted-foreground italic pt-0.5">
-                    Esto solo decide por tu álbum — el otro elige por el suyo cuando entre.
-                  </p>
                 </div>
               </label>
 
