@@ -95,6 +95,7 @@ export default async function PublicLayout({
                 displayName={profile?.display_name ?? null}
                 avatarUrl={profile?.avatar_url ?? null}
                 collectorCardBase64={profile?.collector_card_base64 ?? null}
+                isAdmin={p?.is_admin === true}
               />
             </div>
           </div>

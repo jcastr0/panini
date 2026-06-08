@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, HelpCircle, LogOut, User } from "lucide-react";
+import { Heart, HelpCircle, LogOut, Shield, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -22,12 +23,14 @@ export function UserMenu({
   displayName,
   avatarUrl,
   collectorCardBase64,
+  isAdmin = false,
 }: {
   email: string;
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
   collectorCardBase64: string | null;
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
   const [supportOpen, setSupportOpen] = useState(false);
@@ -61,6 +64,18 @@ export function UserMenu({
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        {isAdmin && (
+          <>
+            <DropdownMenuItem
+              render={<Link href="/admin" />}
+              className="cursor-pointer"
+            >
+              <Shield className="mr-2 size-4 text-[var(--panini-blue)]" />
+              Panel admin
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem onClick={() => router.push("/profile")}>
           <User className="mr-2 size-4" /> Mi perfil
         </DropdownMenuItem>
