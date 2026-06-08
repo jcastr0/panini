@@ -27,7 +27,7 @@ export default async function PublicLayout({
       supabase
         .from("profiles")
         .select(
-          "username, display_name, avatar_url, collector_card_base64, country, department, city, phone",
+          "username, display_name, avatar_url, collector_card_base64, country, department, city, phone, is_admin, banned_at, deleted_at",
         )
         .eq("id", user.id)
         .maybeSingle(),
@@ -42,6 +42,11 @@ export default async function PublicLayout({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const profile = profileQ.data as any;
     const p = profile;
+
+    // Guards admin: usuario baneado o borrado → fuera del app
+    if (p?.banned_at) redirect("/banned");
+    if (p?.deleted_at) redirect("/deleted");
+
     const locationMissing =
       !p?.country ||
       !p?.city ||
