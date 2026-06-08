@@ -285,3 +285,33 @@
   );
   border-radius: 2px;
 }
+
+/* ── Print: lista de faltantes ─────────────────────────────────────────── */
+/* Cuando body.printing-missing está activo, escondemos toda la app excepto
+   el subtree con .print-target (el Popup del dialog). Usamos visibility en
+   vez de display:none para que la layout interna del target no colapse. */
+@media print {
+  body.printing-missing * {
+    visibility: hidden !important;
+  }
+  body.printing-missing .print-target,
+  body.printing-missing .print-target * {
+    visibility: visible !important;
+  }
+  body.printing-missing .print-target {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    transform: none !important;
+    background: white !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  body.printing-missing {
+    background: white !important;
+  }
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Copy, Grid3x3, List } from "lucide-react";
+import { Check, Copy, Grid3x3, List, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/album-config";
 import { StickerCard } from "../../album/_components/sticker-card";
 import { CodeChip } from "./code-chip";
+import { PrintMissingDialog } from "./print-missing-dialog";
 
 export type CollectionSticker = {
   id: string;
@@ -48,6 +49,7 @@ export function CollectionTabs({
 }) {
   const [viewMode, setViewMode] = useState<ViewMode>("visual");
   const [hydrated, setHydrated] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
 
   useEffect(() => {
     const saved = (localStorage.getItem(STORAGE_KEY) ?? "visual") as ViewMode;
@@ -161,11 +163,28 @@ export function CollectionTabs({
         )}
       </TabsContent>
       <TabsContent value="missing">
+        {missing.length > 0 && (
+          <div className="hidden md:flex justify-end mb-3">
+            <button
+              type="button"
+              onClick={() => setPrintOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border px-3 h-9 text-sm font-medium hover:bg-muted transition-colors"
+              title="Imprimir lista de faltantes con imagen — puedes omitir cromos"
+            >
+              <Printer className="size-4" /> Imprimir faltantes
+            </button>
+          </div>
+        )}
         <TabBody
           stickers={missing}
           mode={viewMode}
           variant="missing"
           empty="¡Felicidades, lo tienes todo!"
+        />
+        <PrintMissingDialog
+          missing={missing}
+          open={printOpen}
+          onOpenChange={setPrintOpen}
         />
       </TabsContent>
       <TabsContent value="recent">
