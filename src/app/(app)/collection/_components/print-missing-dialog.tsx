@@ -180,7 +180,7 @@ export function PrintMissingDialog({
                 )}
               </div>
             ) : (
-              <ul className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2 print:grid-cols-8 print:gap-1.5">
+              <ul className="print-grid grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
                 {/* En PREVIEW mostramos todos (incluso los omitidos, en gris claro);
                     en PRINT, solo los visibles. */}
                 {missing.map((s) => {
@@ -261,18 +261,14 @@ function PrintItem({
         )}
       </div>
 
-      {/* Code + nombre + cuadradito para tachar (en print) */}
-      <div className="px-1.5 py-1 border-t text-center print:border-black/20 print:px-1 print:py-0.5">
+      {/* Code + nombre (compacto, sin cuadradito — se tacha con marker) */}
+      <div className="px-1.5 py-1 border-t text-center print:border-black/20">
         <p className="font-mono text-[10px] font-semibold text-foreground print:text-black">
           {code}
         </p>
         <p className="text-[10px] truncate leading-tight text-muted-foreground print:text-black/80">
           {label}
         </p>
-        {/* Cuadradito para tachar al intercambiar físicamente */}
-        <div className="mt-0.5 hidden print:flex items-center justify-center">
-          <span className="inline-block size-3 border border-black/60 rounded-sm" />
-        </div>
       </div>
     </li>
   );
