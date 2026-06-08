@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { StatCard } from "./_components/stat-card";
-import { SignupsChart } from "./_components/signups-chart";
+import { StatCard } from "../_components/stat-card";
+import { SignupsChart } from "../_components/signups-chart";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();

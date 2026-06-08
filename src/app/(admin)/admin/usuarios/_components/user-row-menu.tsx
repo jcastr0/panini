@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ConfirmTypingDialog } from "../../_components/confirm-typing-dialog";
+import { ConfirmTypingDialog } from "../../../_components/confirm-typing-dialog";
 import { restoreUser, setUserBanned, softDeleteUser } from "../actions";
 
 type Row = {
