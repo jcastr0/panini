@@ -7,27 +7,58 @@ import { Button } from "@/components/ui/button";
 import { stickerImagePath } from "@/lib/sticker-image";
 import type { CollectionSticker } from "./collection-tabs";
 
-const STORAGE_PREFIX = "paninijd:print-omit:";
+export type PrintVariant = "missing" | "duplicate";
+
+const STORAGE_PREFIX: Record<PrintVariant, string> = {
+  missing: "paninijd:print-omit:",
+  duplicate: "paninijd:print-omit-dupe:",
+};
+
+const COPY: Record<
+  PrintVariant,
+  {
+    title: string;
+    printHeader: string;
+    emptyHint: string;
+  }
+> = {
+  missing: {
+    title: "Imprimir faltantes",
+    printHeader: "Faltantes — Mundial 2026",
+    emptyHint: "Marca los que quieras ocultar",
+  },
+  duplicate: {
+    title: "Imprimir repetidos",
+    printHeader: "Repetidos para intercambio — Mundial 2026",
+    emptyHint: "Marca los que no quieras ofrecer (ej. los que ya prometiste)",
+  },
+};
 
 /**
- * Dialog para imprimir la lista de faltantes con imagen.
+ * Dialog para imprimir una lista de cromos (faltantes o repetidos) con imagen.
  *
- * - Permite omitir cromos individuales (estado en localStorage por sticker_id).
- *   Útil para no revelar cromos "valiosos" al imprimir y mostrar la lista a
- *   otros coleccionistas (ej. esconder a Messi para que no pidan 30×1).
- * - Layout optimizado para print: grid denso, imagen + código + nombre +
- *   un cuadradito para tachar a mano cuando se intercambie físicamente.
- * - El usuario decide al final si imprime; el cuadro previo es el preview.
+ * - Variant "missing": cromos que me faltan; útil para llevar la lista al
+ *   intercambio físico. Atajo "Omitir legends" porque son extras.
+ * - Variant "duplicate": cromos repetidos que tengo; útil para mostrar a
+ *   otros qué puedo ofrecer. Muestra la cantidad de repetidas (×N).
+ *
+ * Permite omitir cromos individuales — útil para no revelar "valiosos"
+ * (Messi, Mbappé) y evitar que pidan 30×1, o para no anunciar repetidas
+ * que ya tienes comprometidas.
  */
 export function PrintMissingDialog({
   missing,
   open,
   onOpenChange,
+  variant = "missing",
 }: {
   missing: CollectionSticker[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  variant?: PrintVariant;
 }) {
+  const prefix = STORAGE_PREFIX[variant];
+  const copy = COPY[variant];
   const [omitted, setOmitted] = React.useState<Set<string>>(new Set());
   const [hydrated, setHydrated] = React.useState(false);
 
@@ -36,14 +67,14 @@ export function PrintMissingDialog({
     const set = new Set<string>();
     try {
       for (const s of missing) {
-        if (localStorage.getItem(STORAGE_PREFIX + s.id) === "1") set.add(s.id);
+        if (localStorage.getItem(prefix + s.id) === "1") set.add(s.id);
       }
     } catch {
       /* ignore */
     }
     setOmitted(set);
     setHydrated(true);
-  }, [open, missing]);
+  }, [open, missing, prefix]);
 
   function toggleOmit(id: string) {
     setOmitted((prev) => {
@@ -51,14 +82,14 @@ export function PrintMissingDialog({
       if (next.has(id)) {
         next.delete(id);
         try {
-          localStorage.removeItem(STORAGE_PREFIX + id);
+          localStorage.removeItem(prefix + id);
         } catch {
           /* ignore */
         }
       } else {
         next.add(id);
         try {
-          localStorage.setItem(STORAGE_PREFIX + id, "1");
+          localStorage.setItem(prefix + id, "1");
         } catch {
           /* ignore */
         }
@@ -70,7 +101,7 @@ export function PrintMissingDialog({
   function clearAll() {
     for (const s of missing) {
       try {
-        localStorage.removeItem(STORAGE_PREFIX + s.id);
+        localStorage.removeItem(prefix + s.id);
       } catch {
         /* ignore */
       }
@@ -85,7 +116,7 @@ export function PrintMissingDialog({
         if (s.type === "legend") {
           next.add(s.id);
           try {
-            localStorage.setItem(STORAGE_PREFIX + s.id, "1");
+            localStorage.setItem(prefix + s.id, "1");
           } catch {
             /* ignore */
           }
@@ -95,7 +126,11 @@ export function PrintMissingDialog({
     });
   }
 
-  const legendsCount = missing.filter((s) => s.type === "legend").length;
+  // Atajo "Omitir legends" solo tiene sentido en faltantes (son extras del álbum).
+  const legendsCount =
+    variant === "missing"
+      ? missing.filter((s) => s.type === "legend").length
+      : 0;
   const allLegendsOmitted =
     legendsCount > 0 &&
     missing.filter((s) => s.type === "legend").every((s) => omitted.has(s.id));
@@ -105,22 +140,13 @@ export function PrintMissingDialog({
 
   function handlePrint() {
     if (!popupRef.current) return;
-    // Clonamos el popup a un container hijo directo del body. El popup vive
-    // dentro de un portal con position:fixed — eso hace que el browser
-    // repita el contenido en cada página al imprimir. Movido a flujo normal,
-    // el page-break se comporta correctamente.
     const original = popupRef.current;
     const clone = original.cloneNode(true) as HTMLElement;
-
-    // Quitar las clases que forzaban fixed/centrado y los botones interactivos.
     clone.className = "print-clone";
-    // Remover el header con botones (no se imprime, pero por las dudas)
     clone.querySelectorAll(".print\\:hidden").forEach((el) => el.remove());
-    // Remover los li omitidos del clon (estaban con print:hidden pero ahora
-    // recreamos la regla por safety)
-    clone.querySelectorAll<HTMLLIElement>("li[data-omitted='1']").forEach((el) =>
-      el.remove(),
-    );
+    clone
+      .querySelectorAll<HTMLLIElement>("li[data-omitted='1']")
+      .forEach((el) => el.remove());
 
     document.body.appendChild(clone);
     document.body.classList.add("printing-missing");
@@ -131,7 +157,6 @@ export function PrintMissingDialog({
       window.removeEventListener("afterprint", cleanup);
     };
     window.addEventListener("afterprint", cleanup);
-    // Pequeño tick para que el clone se pinte antes de print.
     setTimeout(() => window.print(), 80);
   }
 
@@ -139,18 +164,21 @@ export function PrintMissingDialog({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 print:hidden" />
-        <Dialog.Popup ref={popupRef} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95vw] max-w-5xl max-h-[92vh] rounded-xl border bg-card shadow-2xl flex flex-col">
+        <Dialog.Popup
+          ref={popupRef}
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[95vw] max-w-5xl max-h-[92vh] rounded-xl border bg-card shadow-2xl flex flex-col"
+        >
           {/* Header (oculto en print) */}
           <header className="flex items-center justify-between gap-3 px-6 py-4 border-b print:hidden">
             <div>
               <Dialog.Title className="font-display text-xl font-semibold">
-                Imprimir faltantes
+                {copy.title}
               </Dialog.Title>
               <Dialog.Description className="text-xs text-muted-foreground">
                 {visible.length} de {missing.length} visibles ·{" "}
                 {omitted.size > 0
                   ? `${omitted.size} omitidos`
-                  : "Marca los que quieras ocultar"}
+                  : copy.emptyHint}
               </Dialog.Description>
             </div>
             <div className="flex items-center gap-2">
@@ -183,7 +211,7 @@ export function PrintMissingDialog({
           {/* Header de print (oculto en pantalla) */}
           <div className="hidden print:block px-6 py-4 border-b border-black/20">
             <p className="font-display text-2xl font-bold tracking-tight text-black">
-              Faltantes — Mundial 2026
+              {copy.printHeader}
             </p>
             <p className="text-xs text-black/70">
               {visible.length} cromos · paninijd.lat
@@ -207,8 +235,6 @@ export function PrintMissingDialog({
               </div>
             ) : (
               <ul className="print-grid grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
-                {/* En PREVIEW mostramos todos (incluso los omitidos, en gris claro);
-                    en PRINT, solo los visibles. */}
                 {missing.map((s) => {
                   const isOmit = omitted.has(s.id);
                   return (
@@ -217,6 +243,7 @@ export function PrintMissingDialog({
                       sticker={s}
                       omitted={isOmit}
                       hydrated={hydrated}
+                      variant={variant}
                       onToggle={() => toggleOmit(s.id)}
                     />
                   );
@@ -234,16 +261,21 @@ function PrintItem({
   sticker,
   omitted,
   hydrated,
+  variant,
   onToggle,
 }: {
   sticker: CollectionSticker;
   omitted: boolean;
   hydrated: boolean;
+  variant: PrintVariant;
   onToggle: () => void;
 }) {
   const img = stickerImagePath(sticker.code);
   const label = sticker.team ?? sticker.name;
   const code = sticker.code ?? `#${sticker.number}`;
+  // Para repetidos: mostrar cantidad disponible (qty - 1 = repetidas, descontando la pegada).
+  const dupesAvailable =
+    variant === "duplicate" ? Math.max(0, sticker.qty - 1) : 0;
 
   return (
     <li
@@ -269,6 +301,13 @@ function PrintItem({
         )}
       </button>
 
+      {/* Badge ×N para repetidos */}
+      {variant === "duplicate" && dupesAvailable >= 1 && (
+        <span className="absolute top-1 left-1 z-10 px-1.5 py-0.5 rounded-full bg-[var(--gold)] text-foreground text-[10px] font-bold tabular shadow-sm">
+          ×{dupesAvailable}
+        </span>
+      )}
+
       {/* Imagen */}
       <div className="relative aspect-[3/4] bg-muted print:bg-white">
         {img ? (
@@ -288,10 +327,15 @@ function PrintItem({
         )}
       </div>
 
-      {/* Code + nombre (compacto, sin cuadradito — se tacha con marker) */}
+      {/* Code + nombre (compacto) */}
       <div className="px-1.5 py-1 border-t text-center print:border-black/20">
         <p className="font-mono text-[10px] font-semibold text-foreground print:text-black">
           {code}
+          {variant === "duplicate" && dupesAvailable >= 1 && (
+            <span className="ml-1 text-[var(--gold)] print:text-black">
+              ×{dupesAvailable}
+            </span>
+          )}
         </p>
         <p className="text-[10px] truncate leading-tight text-muted-foreground print:text-black/80">
           {label}

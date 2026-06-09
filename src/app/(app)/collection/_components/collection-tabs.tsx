@@ -49,7 +49,8 @@ export function CollectionTabs({
 }) {
   const [viewMode, setViewMode] = useState<ViewMode>("visual");
   const [hydrated, setHydrated] = useState(false);
-  const [printOpen, setPrintOpen] = useState(false);
+  const [printMissingOpen, setPrintMissingOpen] = useState(false);
+  const [printDupesOpen, setPrintDupesOpen] = useState(false);
 
   useEffect(() => {
     const saved = (localStorage.getItem(STORAGE_KEY) ?? "visual") as ViewMode;
@@ -144,20 +145,36 @@ export function CollectionTabs({
           <Empty title="Sin repetidos por ahora" />
         ) : (
           <>
-            <p className="text-sm text-muted-foreground mb-3">
-              Estos los puedes ofrecer.{" "}
-              <Link
-                href="/trades/new"
-                className="font-medium text-foreground underline-offset-4 hover:underline"
+            <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+              <p className="text-sm text-muted-foreground">
+                Estos los puedes ofrecer.{" "}
+                <Link
+                  href="/trades/new"
+                  className="font-medium text-foreground underline-offset-4 hover:underline"
+                >
+                  Buscar matches →
+                </Link>
+              </p>
+              <button
+                type="button"
+                onClick={() => setPrintDupesOpen(true)}
+                className="hidden md:inline-flex items-center gap-1.5 rounded-full border px-3 h-9 text-sm font-medium hover:bg-muted transition-colors"
+                title="Imprimir lista de repetidos con imagen — puedes omitir cromos"
               >
-                Buscar matches →
-              </Link>
-            </p>
+                <Printer className="size-4" /> Imprimir repetidos
+              </button>
+            </div>
             <TabBody
               stickers={dupes}
               mode={viewMode}
               variant="duplicate"
               empty="Sin repetidos."
+            />
+            <PrintMissingDialog
+              missing={dupes}
+              variant="duplicate"
+              open={printDupesOpen}
+              onOpenChange={setPrintDupesOpen}
             />
           </>
         )}
@@ -167,7 +184,7 @@ export function CollectionTabs({
           <div className="hidden md:flex justify-end mb-3">
             <button
               type="button"
-              onClick={() => setPrintOpen(true)}
+              onClick={() => setPrintMissingOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-full border px-3 h-9 text-sm font-medium hover:bg-muted transition-colors"
               title="Imprimir lista de faltantes con imagen — puedes omitir cromos"
             >
@@ -183,8 +200,9 @@ export function CollectionTabs({
         />
         <PrintMissingDialog
           missing={missing}
-          open={printOpen}
-          onOpenChange={setPrintOpen}
+          variant="missing"
+          open={printMissingOpen}
+          onOpenChange={setPrintMissingOpen}
         />
       </TabsContent>
       <TabsContent value="recent">
