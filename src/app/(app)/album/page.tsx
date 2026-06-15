@@ -71,7 +71,7 @@ export default async function AlbumIndexPage() {
               Hola, {greetName}
             </h1>
             <p className="text-muted-foreground text-base sm:text-lg max-w-md">
-              {stats.percent === 100
+              {stats.missing === 0
                 ? "¡Álbum completo! Felicidades, lo lograste."
                 : `Te ${stats.missing === 1 ? "falta" : "faltan"} ${stats.missing} cromo${stats.missing === 1 ? "" : "s"} para terminar.`}
             </p>
